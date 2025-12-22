@@ -9,7 +9,6 @@ import { TreeView } from '@/components/jsonify/TreeView';
 import { GraphView } from '@/components/jsonify/GraphView';
 import { HistoryPanel } from '@/components/jsonify/HistoryPanel';
 import { SchemaValidator } from '@/components/jsonify/SchemaValidator';
-import { ShareDialog } from '@/components/jsonify/ShareDialog';
 import { useTheme } from '@/hooks/useTheme';
 import { useJsonHistory } from '@/hooks/useJsonHistory';
 import { 
@@ -32,7 +31,6 @@ const Index = () => {
   const [showGraph, setShowGraph] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [showSchema, setShowSchema] = useState(false);
-  const [showShareDialog, setShowShareDialog] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
 
   // Load JSON from URL on mount
@@ -191,7 +189,6 @@ const Index = () => {
           onUndo={handleUndo}
           onCopy={handleCopy}
           onClear={handleClear}
-          onShare={() => setShowShareDialog(true)}
           onToggleHistory={() => setShowHistory(!showHistory)}
           onToggleTree={() => { setShowTree(!showTree); if (!showTree) setShowGraph(false); }}
           onToggleGraph={() => { setShowGraph(!showGraph); if (!showGraph) setShowTree(false); }}
@@ -264,13 +261,6 @@ const Index = () => {
           hasContent={hasContent}
         />
       </main>
-
-      {/* Share dialog */}
-      <ShareDialog
-        open={showShareDialog}
-        onOpenChange={setShowShareDialog}
-        json={json}
-      />
     </div>
   );
 };

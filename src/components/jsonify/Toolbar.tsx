@@ -4,7 +4,6 @@ import {
   Copy, 
   Check, 
   Trash2, 
-  Share2, 
   History,
   FileJson,
   TreePine,
@@ -27,7 +26,6 @@ interface ToolbarProps {
   onUndo: () => void;
   onCopy: () => void;
   onClear: () => void;
-  onShare: () => void;
   onToggleHistory: () => void;
   onToggleTree: () => void;
   onToggleGraph: () => void;
@@ -46,7 +44,6 @@ export function Toolbar({
   onUndo,
   onCopy,
   onClear,
-  onShare,
   onToggleHistory,
   onToggleTree,
   onToggleGraph,
@@ -183,17 +180,6 @@ export function Toolbar({
       >
         <History className="h-4 w-4 mr-1" />
         History
-      </Button>
-
-      <Button 
-        variant="outline" 
-        size="sm" 
-        onClick={onShare}
-        disabled={!isValid || !hasContent}
-        className="border-primary/50 text-primary hover:bg-primary hover:text-primary-foreground"
-      >
-        <Share2 className="h-4 w-4 mr-1" />
-        Share
       </Button>
     </div>
   );
