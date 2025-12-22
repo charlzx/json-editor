@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { TreePine } from 'lucide-react';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { ThemeToggle } from '@/components/jsonify/ThemeToggle';
-import { JsonEditor } from '@/components/jsonify/JsonEditor';
+import { MonacoJsonEditor } from '@/components/jsonify/MonacoJsonEditor';
 import { Toolbar } from '@/components/jsonify/Toolbar';
 import { StatusBar } from '@/components/jsonify/StatusBar';
 import { TreeView } from '@/components/jsonify/TreeView';
@@ -20,6 +20,7 @@ import {
   TreeNode
 } from '@/lib/jsonUtils';
 import { toast } from 'sonner';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const Index = () => {
   const { isDark, toggleTheme } = useTheme();
@@ -207,13 +208,18 @@ const Index = () => {
         )}
 
         {/* Editor area */}
-        <div className="flex flex-1 gap-4 overflow-hidden">
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3 }}
+          className="flex flex-1 gap-4 overflow-hidden"
+        >
           {/* Main editor + visualization */}
           <div className="flex flex-1 overflow-hidden">
             {(showTree || showGraph) && validation.valid && hasContent ? (
               <ResizablePanelGroup direction="horizontal" className="h-full">
                 <ResizablePanel defaultSize={50} minSize={30}>
-                  <JsonEditor
+                  <MonacoJsonEditor
                     value={json}
                     onChange={setJson}
                     errorLine={validation.error?.line}
@@ -221,19 +227,37 @@ const Index = () => {
                 </ResizablePanel>
                 <ResizableHandle withHandle className="mx-2" />
                 <ResizablePanel defaultSize={50} minSize={25}>
-                  {showTree && (
-                    <div className="h-full overflow-auto rounded-lg border border-border bg-card scrollbar-thin">
-                      <TreeView nodes={treeNodes} />
-                    </div>
-                  )}
-                  {showGraph && (
-                    <GraphView nodes={treeNodes} />
-                  )}
+                  <AnimatePresence mode="wait">
+                    {showTree && (
+                      <motion.div
+                        key="tree"
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        transition={{ duration: 0.2 }}
+                        className="h-full overflow-auto rounded-lg border border-border bg-card scrollbar-thin"
+                      >
+                        <TreeView nodes={treeNodes} />
+                      </motion.div>
+                    )}
+                    {showGraph && (
+                      <motion.div
+                        key="graph"
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        transition={{ duration: 0.2 }}
+                        className="h-full"
+                      >
+                        <GraphView nodes={treeNodes} />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </ResizablePanel>
               </ResizablePanelGroup>
             ) : (
               <div className="flex-1">
-                <JsonEditor
+                <MonacoJsonEditor
                   value={json}
                   onChange={setJson}
                   errorLine={validation.error?.line}
@@ -243,16 +267,25 @@ const Index = () => {
           </div>
 
           {/* History panel */}
-          {showHistory && (
-            <HistoryPanel
-              history={history}
-              onSelect={handleHistorySelect}
-              onRemove={removeFromHistory}
-              onClear={clearHistory}
-              onClose={() => setShowHistory(false)}
-            />
-          )}
-        </div>
+          <AnimatePresence>
+            {showHistory && (
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.2 }}
+              >
+                <HistoryPanel
+                  history={history}
+                  onSelect={handleHistorySelect}
+                  onRemove={removeFromHistory}
+                  onClear={clearHistory}
+                  onClose={() => setShowHistory(false)}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
 
         {/* Status bar */}
         <StatusBar

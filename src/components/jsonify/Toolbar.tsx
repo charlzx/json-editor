@@ -19,6 +19,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useState } from 'react';
+import { motion } from 'framer-motion';
 
 interface ToolbarProps {
   onFormat: (indent: number) => void;
@@ -64,7 +65,11 @@ export function Toolbar({
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-card p-2">
+    <motion.div
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="flex flex-wrap items-center gap-2 rounded-lg glass p-3"
+    >
       {/* Format dropdown */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -72,7 +77,7 @@ export function Toolbar({
             variant="default" 
             size="sm" 
             disabled={!isValid || !hasContent}
-            className="gap-1"
+            className="gap-1.5 ripple hover-lift"
           >
             <Wand2 className="h-4 w-4" />
             Format
@@ -97,8 +102,9 @@ export function Toolbar({
         size="sm" 
         onClick={onMinify}
         disabled={!isValid || !hasContent}
+        className="ripple hover-lift"
       >
-        <Minimize2 className="h-4 w-4 mr-1" />
+        <Minimize2 className="h-4 w-4 mr-1.5" />
         Minify
       </Button>
 
@@ -107,23 +113,25 @@ export function Toolbar({
         size="sm" 
         onClick={onUndo}
         disabled={!canUndo}
+        className="ripple hover-lift"
       >
-        <Undo2 className="h-4 w-4 mr-1" />
+        <Undo2 className="h-4 w-4 mr-1.5" />
         Undo
       </Button>
 
-      <div className="h-6 w-px bg-border" />
+      <div className="h-6 w-px bg-border/50" />
 
       <Button 
         variant="outline" 
         size="sm" 
         onClick={handleCopy}
         disabled={!hasContent}
+        className="gap-1.5 ripple hover-lift"
       >
         {copied ? (
-          <Check className="h-4 w-4 mr-1 text-accent" />
+          <Check className="h-4 w-4 text-accent" />
         ) : (
-          <Copy className="h-4 w-4 mr-1" />
+          <Copy className="h-4 w-4" />
         )}
         {copied ? 'Copied!' : 'Copy'}
       </Button>
@@ -133,21 +141,22 @@ export function Toolbar({
         size="sm" 
         onClick={onClear}
         disabled={!hasContent}
+        className="gap-1.5 ripple hover-lift"
       >
-        <Trash2 className="h-4 w-4 mr-1" />
+        <Trash2 className="h-4 w-4" />
         Clear
       </Button>
 
-      <div className="h-6 w-px bg-border" />
+      <div className="h-6 w-px bg-border/50" />
 
       <Button 
         variant={isTreeVisible ? 'default' : 'outline'}
         size="sm" 
         onClick={onToggleTree}
         disabled={!isValid || !hasContent}
-        className={isTreeVisible ? 'bg-primary text-primary-foreground ring-2 ring-primary/30' : ''}
+        className={`gap-1.5 ripple hover-lift ${isTreeVisible ? 'bg-primary text-primary-foreground ring-2 ring-primary/30' : ''}`}
       >
-        <TreePine className="h-4 w-4 mr-1" />
+        <TreePine className="h-4 w-4" />
         Tree
       </Button>
 
@@ -156,9 +165,9 @@ export function Toolbar({
         size="sm" 
         onClick={onToggleGraph}
         disabled={!isValid || !hasContent}
-        className={isGraphVisible ? 'bg-accent text-accent-foreground ring-2 ring-accent/30' : ''}
+        className={`gap-1.5 ripple hover-lift ${isGraphVisible ? 'bg-accent text-accent-foreground ring-2 ring-accent/30' : ''}`}
       >
-        <GitBranch className="h-4 w-4 mr-1" />
+        <GitBranch className="h-4 w-4" />
         Graph
       </Button>
 
@@ -166,8 +175,9 @@ export function Toolbar({
         variant={isSchemaVisible ? 'secondary' : 'outline'}
         size="sm" 
         onClick={onToggleSchema}
+        className="gap-1.5 ripple hover-lift"
       >
-        <FileJson className="h-4 w-4 mr-1" />
+        <FileJson className="h-4 w-4" />
         Schema
       </Button>
 
@@ -177,10 +187,11 @@ export function Toolbar({
         variant="ghost" 
         size="sm" 
         onClick={onToggleHistory}
+        className="gap-1.5 ripple hover-lift"
       >
-        <History className="h-4 w-4 mr-1" />
+        <History className="h-4 w-4" />
         History
       </Button>
-    </div>
+    </motion.div>
   );
 }

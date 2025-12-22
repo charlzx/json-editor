@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { ChevronRight, ChevronDown, Copy, Check } from 'lucide-react';
+import { ChevronRight, ChevronDown, Copy, Check, Braces, Brackets, Type, Hash, ToggleLeft, Ban } from 'lucide-react';
 import { TreeNode } from '@/lib/jsonUtils';
 import { cn } from '@/lib/utils';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface TreeViewProps {
   nodes: TreeNode[];
@@ -40,41 +41,74 @@ function TreeNodeItem({ node }: { node: TreeNode }) {
 
   const getValueDisplay = () => {
     if (node.type === 'object') {
-      return <span className="text-muted-foreground">{`{${node.children.length}}`}</span>;
+      return (
+        <span className="flex items-center gap-1">
+          <Braces className="h-3.5 w-3.5 text-blue-500" />
+          <span className="text-muted-foreground">{`{${node.children.length}}`}</span>
+        </span>
+      );
     }
     if (node.type === 'array') {
-      return <span className="text-muted-foreground">{`[${node.children.length}]`}</span>;
+      return (
+        <span className="flex items-center gap-1">
+          <Brackets className="h-3.5 w-3.5 text-purple-500" />
+          <span className="text-muted-foreground">{`[${node.children.length}]`}</span>
+        </span>
+      );
     }
     if (node.type === 'string') {
-      return <span className="syntax-string">"{String(node.value)}"</span>;
+      return (
+        <span className="flex items-center gap-1">
+          <Type className="h-3 w-3 text-green-500" />
+          <span className="syntax-string">"{String(node.value)}"</span>
+        </span>
+      );
     }
     if (node.type === 'number') {
-      return <span className="syntax-number">{String(node.value)}</span>;
+      return (
+        <span className="flex items-center gap-1">
+          <Hash className="h-3 w-3 text-orange-500" />
+          <span className="syntax-number">{String(node.value)}</span>
+        </span>
+      );
     }
     if (node.type === 'boolean') {
-      return <span className="syntax-boolean">{String(node.value)}</span>;
+      return (
+        <span className="flex items-center gap-1">
+          <ToggleLeft className="h-3.5 w-3.5 text-yellow-500" />
+          <span className="syntax-boolean">{String(node.value)}</span>
+        </span>
+      );
     }
     if (node.type === 'null') {
-      return <span className="syntax-null">null</span>;
+      return (
+        <span className="flex items-center gap-1">
+          <Ban className="h-3 w-3 text-red-500" />
+          <span className="syntax-null">null</span>
+        </span>
+      );
     }
     return String(node.value);
   };
 
   return (
     <div className="select-none">
-      <div
+      <motion.div
+        initial={{ opacity: 0, x: -10 }}
+        animate={{ opacity: 1, x: 0 }}
         className={cn(
-          'group flex items-center gap-1 rounded px-1 py-0.5 hover:bg-muted',
+          'group flex items-center gap-1.5 rounded-md px-2 py-1 transition-all hover:bg-muted/80 hover-lift',
           isExpandable && 'cursor-pointer'
         )}
         onClick={() => isExpandable && setIsExpanded(!isExpanded)}
       >
         {isExpandable ? (
-          isExpanded ? (
-            <ChevronDown className="h-4 w-4 text-muted-foreground" />
-          ) : (
+          <motion.div
+            animate={{ rotate: isExpanded ? 90 : 0 }}
+            transition={{ duration: 0.2 }}
+          >
             <ChevronRight className="h-4 w-4 text-muted-foreground" />
-          )
+          </motion.div>
         ) : (
           <span className="w-4" />
         )}
@@ -88,24 +122,32 @@ function TreeNodeItem({ node }: { node: TreeNode }) {
             e.stopPropagation();
             copyPath();
           }}
-          className="ml-2 opacity-0 transition-opacity group-hover:opacity-100"
+          className="ml-auto opacity-0 transition-all group-hover:opacity-100 ripple rounded p-1 hover:bg-accent/10"
           title="Copy path"
         >
           {copied ? (
-            <Check className="h-3 w-3 text-accent" />
+            <Check className="h-3 w-3 text-accent animate-scale-in" />
           ) : (
             <Copy className="h-3 w-3 text-muted-foreground hover:text-foreground" />
           )}
         </button>
-      </div>
+      </motion.div>
 
-      {isExpandable && isExpanded && hasChildren && (
-        <div className="ml-4 border-l border-border pl-2">
-          {node.children.map((child, index) => (
-            <TreeNodeItem key={`${child.path}-${index}`} node={child} />
-          ))}
-        </div>
-      )}
+      <AnimatePresence>
+        {isExpandable && isExpanded && hasChildren && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="ml-4 border-l-2 border-primary/20 pl-3 mt-1"
+          >
+            {node.children.map((child, index) => (
+              <TreeNodeItem key={`${child.path}-${index}`} node={child} />
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

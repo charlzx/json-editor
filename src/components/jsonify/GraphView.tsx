@@ -3,6 +3,7 @@ import { TreeNode } from '@/lib/jsonUtils';
 import { cn } from '@/lib/utils';
 import { X, ChevronRight, ChevronDown, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { motion } from 'framer-motion';
 
 interface GraphViewProps {
   nodes: TreeNode[];
@@ -143,11 +144,15 @@ export function GraphView({ nodes }: GraphViewProps) {
   return (
     <div className="relative h-full w-full overflow-hidden bg-card rounded-lg border border-border">
       {/* Controls */}
-      <div className="absolute top-3 right-3 z-10 flex gap-1">
+      <motion.div 
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="absolute top-3 right-3 z-10 flex gap-1"
+      >
         <Button
           variant="outline"
           size="icon"
-          className="h-8 w-8 bg-background/80 backdrop-blur-sm"
+          className="h-8 w-8 glass ripple hover-lift"
           onClick={() => setZoom(z => Math.min(z + 0.2, 2))}
         >
           <ZoomIn className="h-4 w-4" />
@@ -155,7 +160,7 @@ export function GraphView({ nodes }: GraphViewProps) {
         <Button
           variant="outline"
           size="icon"
-          className="h-8 w-8 bg-background/80 backdrop-blur-sm"
+          className="h-8 w-8 glass ripple hover-lift"
           onClick={() => setZoom(z => Math.max(z - 0.2, 0.4))}
         >
           <ZoomOut className="h-4 w-4" />
@@ -163,16 +168,21 @@ export function GraphView({ nodes }: GraphViewProps) {
         <Button
           variant="outline"
           size="icon"
-          className="h-8 w-8 bg-background/80 backdrop-blur-sm"
+          className="h-8 w-8 glass ripple hover-lift"
           onClick={() => { setZoom(1); setPan({ x: 50, y: 50 }); }}
         >
           <Maximize2 className="h-4 w-4" />
         </Button>
-      </div>
+      </motion.div>
 
       {/* Selected node info panel */}
       {selectedNode && (
-        <div className="absolute bottom-3 left-3 right-3 z-10 max-w-md rounded-lg border border-border bg-background/95 backdrop-blur-sm p-4 shadow-xl">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 20 }}
+          className="absolute bottom-3 left-3 right-3 z-10 max-w-md rounded-lg glass-strong p-4 shadow-xl border border-border/30"
+        >
           <div className="flex items-start justify-between gap-2">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-2">
@@ -203,13 +213,13 @@ export function GraphView({ nodes }: GraphViewProps) {
             <Button
               variant="ghost"
               size="icon"
-              className="h-6 w-6 shrink-0"
+              className="h-6 w-6 shrink-0 ripple"
               onClick={() => setSelectedNode(null)}
             >
               <X className="h-4 w-4" />
             </Button>
           </div>
-        </div>
+        </motion.div>
       )}
 
       {/* Graph canvas */}
@@ -261,7 +271,7 @@ export function GraphView({ nodes }: GraphViewProps) {
               <g
                 key={`node-${node.path}`}
                 transform={`translate(${x}, ${y})`}
-                className="cursor-pointer"
+                className="cursor-pointer hover-glow"
                 onClick={(e) => {
                   e.stopPropagation();
                   setSelectedNode(node);
@@ -276,6 +286,9 @@ export function GraphView({ nodes }: GraphViewProps) {
                   stroke={isSelected ? getNodeColor(node.type) : 'hsl(var(--border))'}
                   strokeWidth={isSelected ? 2 : 1}
                   className="transition-all duration-200"
+                  style={{
+                    filter: isSelected ? 'drop-shadow(0 0 8px currentColor)' : 'none'
+                  }}
                 />
 
                 {/* Type indicator */}
