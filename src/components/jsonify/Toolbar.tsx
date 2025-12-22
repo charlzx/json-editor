@@ -18,6 +18,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 
@@ -97,101 +102,159 @@ export function Toolbar({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <Button 
-        variant="outline" 
-        size="sm" 
-        onClick={onMinify}
-        disabled={!isValid || !hasContent}
-        className="ripple hover-lift"
-      >
-        <Minimize2 className="h-4 w-4 mr-1.5" />
-        Minify
-      </Button>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={onMinify}
+            disabled={!isValid || !hasContent}
+            className="ripple hover-lift"
+          >
+            <Minimize2 className="h-4 w-4 mr-1.5" />
+            Minify
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>Minify JSON <kbd className="ml-1 px-1.5 py-0.5 text-xs bg-muted rounded">Ctrl+M</kbd></p>
+        </TooltipContent>
+      </Tooltip>
 
-      <Button 
-        variant="outline" 
-        size="sm" 
-        onClick={onUndo}
-        disabled={!canUndo}
-        className="ripple hover-lift"
-      >
-        <Undo2 className="h-4 w-4 mr-1.5" />
-        Undo
-      </Button>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={onUndo}
+            disabled={!canUndo}
+            className="ripple hover-lift"
+          >
+            <Undo2 className="h-4 w-4 mr-1.5" />
+            Undo
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>Undo <kbd className="ml-1 px-1.5 py-0.5 text-xs bg-muted rounded">Ctrl+Z</kbd></p>
+        </TooltipContent>
+      </Tooltip>
 
       <div className="h-6 w-px bg-border/50" />
 
-      <Button 
-        variant="outline" 
-        size="sm" 
-        onClick={handleCopy}
-        disabled={!hasContent}
-        className="gap-1.5 ripple hover-lift"
-      >
-        {copied ? (
-          <Check className="h-4 w-4 text-accent" />
-        ) : (
-          <Copy className="h-4 w-4" />
-        )}
-        {copied ? 'Copied!' : 'Copy'}
-      </Button>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleCopy}
+            disabled={!hasContent}
+            className="gap-1.5 ripple hover-lift"
+          >
+            {copied ? (
+              <Check className="h-4 w-4 text-accent" />
+            ) : (
+              <Copy className="h-4 w-4" />
+            )}
+            {copied ? 'Copied!' : 'Copy'}
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>Copy to clipboard</p>
+        </TooltipContent>
+      </Tooltip>
 
-      <Button 
-        variant="outline" 
-        size="sm" 
-        onClick={onClear}
-        disabled={!hasContent}
-        className="gap-1.5 ripple hover-lift"
-      >
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={onClear}
+            disabled={!hasContent}
+            className="ripple hover-lift"
+          >
+            <Trash2 className="h-4 w-4 mr-1.5" />
+            Clear
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>Clear editor <kbd className="ml-1 px-1.5 py-0.5 text-xs bg-muted rounded">Ctrl+K</kbd></p>
+        </TooltipContent>
+      </Tooltip>
+
+      <div className="h-6 w-px bg-border/50" />
         <Trash2 className="h-4 w-4" />
-        Clear
-      </Button>
-
       <div className="h-6 w-px bg-border/50" />
 
-      <Button 
-        variant={isTreeVisible ? 'default' : 'outline'}
-        size="sm" 
-        onClick={onToggleTree}
-        disabled={!isValid || !hasContent}
-        className={`gap-1.5 ripple hover-lift ${isTreeVisible ? 'bg-primary text-primary-foreground ring-2 ring-primary/30' : ''}`}
-      >
-        <TreePine className="h-4 w-4" />
-        Tree
-      </Button>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button 
+            variant={isTreeVisible ? 'default' : 'outline'}
+            size="sm" 
+            onClick={onToggleTree}
+            disabled={!isValid || !hasContent}
+            className={`gap-1.5 ripple hover-lift ${isTreeVisible ? 'bg-primary text-primary-foreground ring-2 ring-primary/30' : ''}`}
+          >
+            <TreePine className="h-4 w-4" />
+            Tree
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>Toggle tree view</p>
+        </TooltipContent>
+      </Tooltip>
 
-      <Button 
-        variant={isGraphVisible ? 'default' : 'outline'}
-        size="sm" 
-        onClick={onToggleGraph}
-        disabled={!isValid || !hasContent}
-        className={`gap-1.5 ripple hover-lift ${isGraphVisible ? 'bg-accent text-accent-foreground ring-2 ring-accent/30' : ''}`}
-      >
-        <GitBranch className="h-4 w-4" />
-        Graph
-      </Button>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button 
+            variant={isGraphVisible ? 'default' : 'outline'}
+            size="sm" 
+            onClick={onToggleGraph}
+            disabled={!isValid || !hasContent}
+            className={`gap-1.5 ripple hover-lift ${isGraphVisible ? 'bg-accent text-accent-foreground ring-2 ring-accent/30' : ''}`}
+          >
+            <GitBranch className="h-4 w-4" />
+            Graph
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>Toggle graph view</p>
+        </TooltipContent>
+      </Tooltip>
 
-      <Button 
-        variant={isSchemaVisible ? 'secondary' : 'outline'}
-        size="sm" 
-        onClick={onToggleSchema}
-        className="gap-1.5 ripple hover-lift"
-      >
-        <FileJson className="h-4 w-4" />
-        Schema
-      </Button>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button 
+            variant={isSchemaVisible ? 'secondary' : 'outline'}
+            size="sm" 
+            onClick={onToggleSchema}
+            className="gap-1.5 ripple hover-lift"
+          >
+            <FileJson className="h-4 w-4" />
+            Schema
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>Toggle schema validator</p>
+        </TooltipContent>
+      </Tooltip>
 
       <div className="flex-1" />
 
-      <Button 
-        variant="ghost" 
-        size="sm" 
-        onClick={onToggleHistory}
-        className="gap-1.5 ripple hover-lift"
-      >
-        <History className="h-4 w-4" />
-        History
-      </Button>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={onToggleHistory}
+            className="gap-1.5 ripple hover-lift"
+          >
+            <History className="h-4 w-4" />
+            History
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>Toggle history <kbd className="ml-1 px-1.5 py-0.5 text-xs bg-muted rounded">Ctrl+H</kbd></p>
+        </TooltipContent>
+      </Tooltip>
     </motion.div>
   );
 }

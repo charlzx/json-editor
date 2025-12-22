@@ -73,11 +73,15 @@ export function MonacoJsonEditor({ value, onChange, errorLine }: MonacoJsonEdito
   useEffect(() => {
     if (editorRef.current && errorLine) {
       const editor = editorRef.current;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const monaco = (window as any).monaco;
+      if (!monaco) return;
+      
       const decorations = editor.deltaDecorations(
         [],
         [
           {
-            range: new (window as any).monaco.Range(errorLine, 1, errorLine, 1),
+            range: new monaco.Range(errorLine, 1, errorLine, 1),
             options: {
               isWholeLine: true,
               className: 'error-line',
@@ -99,7 +103,11 @@ export function MonacoJsonEditor({ value, onChange, errorLine }: MonacoJsonEdito
     const observer = new MutationObserver(() => {
       const isDark = document.documentElement.classList.contains('dark');
       if (editorRef.current) {
-        (window as any).monaco?.editor.setTheme(isDark ? 'json-tree-dark' : 'json-tree-light');
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const monaco = (window as any).monaco;
+        if (monaco?.editor) {
+          monaco.editor.setTheme(isDark ? 'json-tree-dark' : 'json-tree-light');
+        }
       }
     });
 

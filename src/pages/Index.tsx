@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { TreePine } from 'lucide-react';
+import { TreePine, Maximize, Minimize, RotateCw } from 'lucide-react';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { ThemeToggle } from '@/components/jsonify/ThemeToggle';
 import { MonacoJsonEditor } from '@/components/jsonify/MonacoJsonEditor';
@@ -9,6 +9,7 @@ import { TreeView } from '@/components/jsonify/TreeView';
 import { GraphView } from '@/components/jsonify/GraphView';
 import { HistoryPanel } from '@/components/jsonify/HistoryPanel';
 import { SchemaValidator } from '@/components/jsonify/SchemaValidator';
+import { Button } from '@/components/ui/button';
 import { useTheme } from '@/hooks/useTheme';
 import { useJsonHistory } from '@/hooks/useJsonHistory';
 import { 
@@ -33,6 +34,8 @@ const Index = () => {
   const [showHistory, setShowHistory] = useState(false);
   const [showSchema, setShowSchema] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [splitOrientation, setSplitOrientation] = useState<'horizontal' | 'vertical'>('horizontal');
 
   // Load JSON from URL on mount
   useEffect(() => {
@@ -63,7 +66,7 @@ const Index = () => {
   const hasContent = json.trim().length > 0;
   const canUndo = previousJson !== null;
 
-  const handleFormat = (indent: number) => {
+  const handleFormat = useCallback((indent: number) => {
     try {
       const formatted = formatJson(json, indent);
       setPreviousJson(json);
@@ -73,43 +76,84 @@ const Index = () => {
     } catch {
       toast.error('Failed to format JSON');
     }
-  };
+  }, [json, addToHistory]);
 
-  const handleMinify = () => {
+  const handleMinify = useCallback(() => {
     try {
       const minified = minifyJson(json);
       setPreviousJson(json);
       setJson(minified);
+      addToHistory(minified);
       toast.success('JSON minified');
     } catch {
       toast.error('Failed to minify JSON');
     }
-  };
+  }, [json, addToHistory]);
 
-  const handleUndo = () => {
+  const handleUndo = useCallback(() => {
     if (previousJson !== null) {
       setJson(previousJson);
       setPreviousJson(null);
       toast.success('Undone');
     }
-  };
+  }, [previousJson]);
 
-  const handleCopy = () => {
+  const handleCopy = useCallback(() => {
     navigator.clipboard.writeText(json);
     toast.success('Copied to clipboard');
-  };
+  }, [json]);
 
-  const handleClear = () => {
-    setPreviousJson(json);
+  const handleClear = useCallback(() => {
     setJson('');
-    setShowTree(false);
-    toast.success('Cleared');
-  };
+    setPreviousJson(null);
+    toast.success('Editor cleared');
+  }, []);
 
-  const handleHistorySelect = (selectedJson: string) => {
-    setJson(selectedJson);
+  const handleHistorySelect = useCallback((historyJson: string) => {
+    setJson(historyJson);
     setShowHistory(false);
-  };
+  }, []);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl/Cmd + F - Format
+      if ((e.ctrlKey || e.metaKey) && e.key === 'f' && hasContent && validation.valid) {
+        e.preventDefault();
+        handleFormat(2);
+      }
+      // Ctrl/Cmd + M - Minify
+      if ((e.ctrlKey || e.metaKey) && e.key === 'm' && hasContent && validation.valid) {
+        e.preventDefault();
+        handleMinify();
+      }
+      // Ctrl/Cmd + Z - Undo
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && canUndo && !e.shiftKey) {
+        e.preventDefault();
+        handleUndo();
+      }
+      // Ctrl/Cmd + K - Clear
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k' && hasContent) {
+        e.preventDefault();
+        handleClear();
+      }
+      // Ctrl/Cmd + H - Toggle History
+      if ((e.ctrlKey || e.metaKey) && e.key === 'h') {
+        e.preventDefault();
+        setShowHistory(!showHistory);
+      }
+      // Escape - Close panels
+      if (e.key === 'Escape') {
+        if (showHistory) setShowHistory(false);
+        if (showSchema) setShowSchema(false);
+        if (showTree) setShowTree(false);
+        if (showGraph) setShowGraph(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [hasContent, validation.valid, canUndo, showHistory, showSchema, showTree, showGraph, handleFormat, handleMinify, handleUndo, handleClear]);
 
   // Drag and drop handlers
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -203,9 +247,18 @@ const Index = () => {
         />
 
         {/* Schema validator (collapsible) */}
-        {showSchema && (
-          <SchemaValidator json={json} isJsonValid={validation.valid} />
-        )}
+        <AnimatePresence>
+          {showSchema && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <SchemaValidator json={json} isJsonValid={validation.valid} />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Editor area */}
         <motion.div 
@@ -217,7 +270,7 @@ const Index = () => {
           {/* Main editor + visualization */}
           <div className="flex flex-1 overflow-hidden">
             {(showTree || showGraph) && validation.valid && hasContent ? (
-              <ResizablePanelGroup direction="horizontal" className="h-full">
+              <ResizablePanelGroup direction={splitOrientation} className="h-full">
                 <ResizablePanel defaultSize={50} minSize={30}>
                   <MonacoJsonEditor
                     value={json}
@@ -225,7 +278,7 @@ const Index = () => {
                     errorLine={validation.error?.line}
                   />
                 </ResizablePanel>
-                <ResizableHandle withHandle className="mx-2" />
+                <ResizableHandle withHandle className={splitOrientation === 'horizontal' ? 'mx-2' : 'my-2'} />
                 <ResizablePanel defaultSize={50} minSize={25}>
                   <AnimatePresence mode="wait">
                     {showTree && (
@@ -294,6 +347,51 @@ const Index = () => {
           hasContent={hasContent}
         />
       </main>
+
+      {/* Floating Action Buttons */}
+      <AnimatePresence>
+        {hasContent && validation.valid && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.8, y: 20 }}
+            className="fixed bottom-6 right-6 flex flex-col gap-2 z-20"
+          >
+            {/* Fullscreen Toggle */}
+            <Button
+              size="icon"
+              className="h-12 w-12 rounded-full shadow-lg hover:shadow-xl glass hover-lift ripple"
+              onClick={() => {
+                if (!document.fullscreenElement) {
+                  document.documentElement.requestFullscreen();
+                  setIsFullscreen(true);
+                } else {
+                  document.exitFullscreen();
+                  setIsFullscreen(false);
+                }
+              }}
+            >
+              {isFullscreen ? (
+                <Minimize className="h-5 w-5" />
+              ) : (
+                <Maximize className="h-5 w-5" />
+              )}
+            </Button>
+
+            {/* Split Orientation Toggle */}
+            {(showTree || showGraph) && (
+              <Button
+                size="icon"
+                variant="secondary"
+                className="h-12 w-12 rounded-full shadow-lg hover:shadow-xl glass hover-lift ripple"
+                onClick={() => setSplitOrientation(prev => prev === 'horizontal' ? 'vertical' : 'horizontal')}
+              >
+                <RotateCw className="h-5 w-5" />
+              </Button>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
