@@ -114,47 +114,6 @@ const Index = () => {
     setShowHistory(false);
   }, []);
 
-  // Keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Ctrl/Cmd + F - Format
-      if ((e.ctrlKey || e.metaKey) && e.key === 'f' && hasContent && validation.valid) {
-        e.preventDefault();
-        handleFormat(2);
-      }
-      // Ctrl/Cmd + M - Minify
-      if ((e.ctrlKey || e.metaKey) && e.key === 'm' && hasContent && validation.valid) {
-        e.preventDefault();
-        handleMinify();
-      }
-      // Ctrl/Cmd + Z - Undo
-      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && canUndo && !e.shiftKey) {
-        e.preventDefault();
-        handleUndo();
-      }
-      // Ctrl/Cmd + K - Clear
-      if ((e.ctrlKey || e.metaKey) && e.key === 'k' && hasContent) {
-        e.preventDefault();
-        handleClear();
-      }
-      // Ctrl/Cmd + H - Toggle History
-      if ((e.ctrlKey || e.metaKey) && e.key === 'h') {
-        e.preventDefault();
-        setShowHistory(!showHistory);
-      }
-      // Escape - Close panels
-      if (e.key === 'Escape') {
-        if (showHistory) setShowHistory(false);
-        if (showSchema) setShowSchema(false);
-        if (showTree) setShowTree(false);
-        if (showGraph) setShowGraph(false);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [hasContent, validation.valid, canUndo, showHistory, showSchema, showTree, showGraph, handleFormat, handleMinify, handleUndo, handleClear]);
-
   // Drag and drop handlers
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();

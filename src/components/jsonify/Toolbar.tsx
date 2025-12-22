@@ -116,7 +116,7 @@ export function Toolbar({
           </Button>
         </TooltipTrigger>
         <TooltipContent>
-          <p>Minify JSON <kbd className="ml-1 px-1.5 py-0.5 text-xs bg-muted rounded">Ctrl+M</kbd></p>
+          <p>Minify JSON</p>
         </TooltipContent>
       </Tooltip>
 
@@ -134,7 +134,7 @@ export function Toolbar({
           </Button>
         </TooltipTrigger>
         <TooltipContent>
-          <p>Undo <kbd className="ml-1 px-1.5 py-0.5 text-xs bg-muted rounded">Ctrl+Z</kbd></p>
+          <p>Undo</p>
         </TooltipContent>
       </Tooltip>
 
@@ -176,7 +176,7 @@ export function Toolbar({
           </Button>
         </TooltipTrigger>
         <TooltipContent>
-          <p>Clear editor <kbd className="ml-1 px-1.5 py-0.5 text-xs bg-muted rounded">Ctrl+K</kbd></p>
+          <p>Clear editor</p>
         </TooltipContent>
       </Tooltip>
 
@@ -252,7 +252,7 @@ export function Toolbar({
           </Button>
         </TooltipTrigger>
         <TooltipContent>
-          <p>Toggle history <kbd className="ml-1 px-1.5 py-0.5 text-xs bg-muted rounded">Ctrl+H</kbd></p>
+          <p>Toggle history</p>
         </TooltipContent>
       </Tooltip>
     </motion.div>
