@@ -4,9 +4,10 @@ import { HistoryItem } from '@/hooks/useJsonHistory';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // Simple time ago formatter
-function formatTimeAgo(timestamp: Date): string {
+function formatTimeAgo(timestamp: number | Date): string {
   const now = new Date();
-  const seconds = Math.floor((now.getTime() - timestamp.getTime()) / 1000);
+  const timestampDate = typeof timestamp === 'number' ? new Date(timestamp) : timestamp;
+  const seconds = Math.floor((now.getTime() - timestampDate.getTime()) / 1000);
   
   if (seconds < 60) return 'just now';
   const minutes = Math.floor(seconds / 60);

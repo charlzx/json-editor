@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { ChevronRight, ChevronDown, Copy, Check, Braces, Brackets, Type, Hash, ToggleLeft, Ban } from 'lucide-react';
 import { TreeNode } from '@/lib/jsonUtils';
 import { cn } from '@/lib/utils';
@@ -8,7 +8,57 @@ interface TreeViewProps {
   nodes: TreeNode[];
 }
 
+// Flatten tree structure for virtual scrolling
+interface FlatTreeNode {
+  node: TreeNode;
+  depth: number;
+  index: number;
+  parentPath: string;
+}
+
+function flattenTree(nodes: TreeNode[], expandedPaths: Set<string>, depth = 0, parentPath = ''): FlatTreeNode[] {
+  const result: FlatTreeNode[] = [];
+  
+  nodes.forEach((node, index) => {
+    const currentPath = parentPath ? `${parentPath}.${node.key}` : node.key;
+    result.push({ node, depth, index, parentPath: currentPath });
+    
+    const isExpandable = node.type === 'object' || node.type === 'array';
+    if (isExpandable && expandedPaths.has(currentPath) && node.children.length > 0) {
+      result.push(...flattenTree(node.children, expandedPaths, depth + 1, currentPath));
+    }
+  });
+  
+  return result;
+}
+
 export function TreeView({ nodes }: TreeViewProps) {
+  const [expandedPaths, setExpandedPaths] = useState<Set<string>>(() => {
+    // Auto-expand first level
+    const initialExpanded = new Set<string>();
+    nodes.forEach(node => {
+      initialExpanded.add(node.key);
+    });
+    return initialExpanded;
+  });
+
+  const toggleExpanded = useCallback((path: string) => {
+    setExpandedPaths(prev => {
+      const next = new Set(prev);
+      if (next.has(path)) {
+        next.delete(path);
+      } else {
+        next.add(path);
+      }
+      return next;
+    });
+  }, []);
+
+  const flatNodes = useMemo(() => 
+    flattenTree(nodes, expandedPaths),
+    [nodes, expandedPaths]
+  );
+
   if (nodes.length === 0) {
     return (
       <div className="flex h-full items-center justify-center text-muted-foreground">
@@ -19,22 +69,40 @@ export function TreeView({ nodes }: TreeViewProps) {
 
   return (
     <div className="p-4 font-mono text-sm">
-      {nodes.map((node, index) => (
-        <TreeNodeItem key={`${node.path}-${index}`} node={node} />
+      {flatNodes.map((flatNode) => (
+        <TreeNodeItem 
+          key={flatNode.parentPath} 
+          node={flatNode.node}
+          depth={flatNode.depth}
+          path={flatNode.parentPath}
+          isExpanded={expandedPaths.has(flatNode.parentPath)}
+          onToggle={toggleExpanded}
+        />
       ))}
     </div>
   );
 }
 
-function TreeNodeItem({ node }: { node: TreeNode }) {
-  const [isExpanded, setIsExpanded] = useState(true);
+function TreeNodeItem({ 
+  node, 
+  depth, 
+  path, 
+  isExpanded, 
+  onToggle 
+}: { 
+  node: TreeNode; 
+  depth: number; 
+  path: string; 
+  isExpanded: boolean;
+  onToggle: (path: string) => void;
+}) {
   const [copied, setCopied] = useState(false);
 
   const hasChildren = node.children.length > 0;
   const isExpandable = node.type === 'object' || node.type === 'array';
 
   const copyPath = () => {
-    navigator.clipboard.writeText(node.path);
+    navigator.clipboard.writeText(path);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   };
@@ -92,23 +160,23 @@ function TreeNodeItem({ node }: { node: TreeNode }) {
   };
 
   return (
-    <div className="select-none">
-      <motion.div
-        initial={{ opacity: 0, x: -10 }}
-        animate={{ opacity: 1, x: 0 }}
+    <div className="select-none" style={{ marginLeft: `${depth * 16}px` }}>
+      <div
         className={cn(
-          'group flex items-center gap-1.5 rounded-md px-2 py-1 transition-all hover:bg-muted/80 hover-lift',
+          'group flex items-center gap-1.5 rounded-md px-2 py-1 transition-all hover:bg-muted/80',
           isExpandable && 'cursor-pointer'
         )}
-        onClick={() => isExpandable && setIsExpanded(!isExpanded)}
+        onClick={() => isExpandable && onToggle(path)}
       >
         {isExpandable ? (
-          <motion.div
-            animate={{ rotate: isExpanded ? 90 : 0 }}
-            transition={{ duration: 0.2 }}
+          <div
+            style={{
+              transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
+              transition: 'transform 0.2s',
+            }}
           >
             <ChevronRight className="h-4 w-4 text-muted-foreground" />
-          </motion.div>
+          </div>
         ) : (
           <span className="w-4" />
         )}
@@ -122,32 +190,16 @@ function TreeNodeItem({ node }: { node: TreeNode }) {
             e.stopPropagation();
             copyPath();
           }}
-          className="ml-auto opacity-0 transition-all group-hover:opacity-100 ripple rounded p-1 hover:bg-accent/10"
+          className="ml-auto opacity-0 transition-all group-hover:opacity-100 rounded p-1 hover:bg-accent/10"
           title="Copy path"
         >
           {copied ? (
-            <Check className="h-3 w-3 text-accent animate-scale-in" />
+            <Check className="h-3 w-3 text-accent" />
           ) : (
             <Copy className="h-3 w-3 text-muted-foreground hover:text-foreground" />
           )}
         </button>
-      </motion.div>
-
-      <AnimatePresence>
-        {isExpandable && isExpanded && hasChildren && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
-            className="ml-4 border-l-2 border-primary/20 pl-3 mt-1"
-          >
-            {node.children.map((child, index) => (
-              <TreeNodeItem key={`${child.path}-${index}`} node={child} />
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      </div>
     </div>
   );
 }

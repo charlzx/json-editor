@@ -79,9 +79,17 @@ export function GraphView({ nodes }: GraphViewProps) {
       }
     };
 
-    nodes.forEach(node => {
-      processNode(node, 0);
-    });
+    // Create root parent node
+    const rootNode: TreeNode = {
+      key: 'JSON',
+      value: nodes.length === 1 && nodes[0].key === '' ? nodes[0].value : null,
+      type: nodes.length === 1 && nodes[0].key === '' ? nodes[0].type : 'object',
+      path: 'root',
+      children: nodes,
+      parent: null,
+    };
+
+    processNode(rootNode, 0);
 
     return result;
   }, [nodes, expandedPaths]);
@@ -153,7 +161,7 @@ export function GraphView({ nodes }: GraphViewProps) {
           variant="outline"
           size="icon"
           className="h-8 w-8 glass ripple hover-lift"
-          onClick={() => setZoom(z => Math.min(z + 0.2, 2))}
+          onClick={() => setZoom(z => Math.min(z + 0.2, 3))}
         >
           <ZoomIn className="h-4 w-4" />
         </Button>
@@ -161,7 +169,7 @@ export function GraphView({ nodes }: GraphViewProps) {
           variant="outline"
           size="icon"
           className="h-8 w-8 glass ripple hover-lift"
-          onClick={() => setZoom(z => Math.max(z - 0.2, 0.4))}
+          onClick={() => setZoom(z => Math.max(z - 0.2, 0.3))}
         >
           <ZoomOut className="h-4 w-4" />
         </Button>
@@ -169,7 +177,7 @@ export function GraphView({ nodes }: GraphViewProps) {
           variant="outline"
           size="icon"
           className="h-8 w-8 glass ripple hover-lift"
-          onClick={() => { setZoom(1); setPan({ x: 50, y: 50 }); }}
+          onClick={() => { setZoom(1); setPan({ x: 0, y: 0 }); }}
         >
           <Maximize2 className="h-4 w-4" />
         </Button>
@@ -225,7 +233,7 @@ export function GraphView({ nodes }: GraphViewProps) {
       {/* Graph canvas */}
       <div
         className={cn(
-          "h-full w-full cursor-grab",
+          "h-full w-full cursor-grab overflow-auto",
           isDragging && "cursor-grabbing"
         )}
         onMouseDown={handleMouseDown}
@@ -234,11 +242,14 @@ export function GraphView({ nodes }: GraphViewProps) {
         onMouseLeave={handleMouseUp}
       >
         <svg
-          width="100%"
-          height="100%"
+          width={dimensions.width * zoom}
+          height={dimensions.height * zoom}
+          viewBox={`0 0 ${dimensions.width} ${dimensions.height}`}
           style={{
-            transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+            transform: `translate(${pan.x}px, ${pan.y}px)`,
             transformOrigin: '0 0',
+            minWidth: '100%',
+            minHeight: '100%',
           }}
         >
           {/* Connection lines */}

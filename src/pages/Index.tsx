@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
-import { TreePine, Maximize, Minimize, RotateCw } from 'lucide-react';
+import { useState, useEffect, useMemo, useCallback, useRef, useTransition } from 'react';
+import { TreePine, Maximize, Minimize, RotateCw, Loader2 } from 'lucide-react';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { ThemeToggle } from '@/components/jsonify/ThemeToggle';
 import { MonacoJsonEditor } from '@/components/jsonify/MonacoJsonEditor';
@@ -12,6 +12,7 @@ import { SchemaValidator } from '@/components/jsonify/SchemaValidator';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/hooks/useTheme';
 import { useJsonHistory } from '@/hooks/useJsonHistory';
+import { useDebounce } from '@/hooks/useDebounce';
 import { 
   validateJson, 
   formatJson, 
@@ -20,14 +21,25 @@ import {
   buildTree,
   TreeNode
 } from '@/lib/jsonUtils';
+import { readFileInChunks, formatFileSize } from '@/lib/fileUtils';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
+
+const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB hard cap for uploads
+const VISUALIZATION_LIMIT_BYTES = 5 * 1024 * 1024; // 5 MB limit for tree/graph rendering
+const DEBOUNCE_DELAY = 300; // ms delay for validation during typing
+
+const formatBytes = (bytes: number) => formatFileSize(bytes);
 
 const Index = () => {
   const { isDark, toggleTheme } = useTheme();
   const { history, addToHistory, clearHistory, removeFromHistory } = useJsonHistory();
+  const viewContainerRef = useRef<HTMLDivElement>(null);
+  const visualizationWarningShown = useRef(false);
+  const [isPending, startTransition] = useTransition();
   
   const [json, setJson] = useState('');
+  const [debouncedJson, setDebouncedJson] = useState('');
   const [previousJson, setPreviousJson] = useState<string | null>(null);
   const [showTree, setShowTree] = useState(false);
   const [showGraph, setShowGraph] = useState(false);
@@ -36,6 +48,17 @@ const Index = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [splitOrientation, setSplitOrientation] = useState<'horizontal' | 'vertical'>('horizontal');
+  const [isLoadingFile, setIsLoadingFile] = useState(false);
+  const [loadProgress, setLoadProgress] = useState(0);
+
+  // Debounce JSON updates for validation to improve typing performance
+  const updateDebouncedJson = useDebounce((value: string) => {
+    setDebouncedJson(value);
+  }, DEBOUNCE_DELAY);
+
+  useEffect(() => {
+    updateDebouncedJson(json);
+  }, [json, updateDebouncedJson]);
 
   // Load JSON from URL on mount
   useEffect(() => {
@@ -52,18 +75,53 @@ const Index = () => {
     }
   }, []);
 
-  const validation = useMemo(() => validateJson(json), [json]);
-  const stats = useMemo(() => getJsonStats(json), [json]);
-  const treeNodes = useMemo<TreeNode[]>(() => {
-    if (!validation.valid) return [];
-    try {
-      return buildTree(JSON.parse(json));
-    } catch {
-      return [];
+  const validation = useMemo(() => validateJson(debouncedJson), [debouncedJson]);
+  const stats = useMemo(() => getJsonStats(debouncedJson, validation.parsed), [debouncedJson, validation.parsed]);
+  const jsonSizeBytes = useMemo(() => new Blob([debouncedJson]).size, [debouncedJson]);
+  const hasContent = debouncedJson.trim().length > 0;
+  const [treeNodes, setTreeNodes] = useState<TreeNode[]>([]);
+  
+  useEffect(() => {
+    if (!hasContent || !validation.valid || typeof validation.parsed === 'undefined') {
+      setTreeNodes([]);
+      return;
     }
-  }, [json, validation.valid]);
 
-  const hasContent = json.trim().length > 0;
+    if (!(showTree || showGraph)) {
+      setTreeNodes([]);
+      return;
+    }
+
+    if (jsonSizeBytes > VISUALIZATION_LIMIT_BYTES) {
+      setTreeNodes([]);
+      return;
+    }
+    
+    startTransition(() => {
+      try {
+        const nodes = buildTree(validation.parsed);
+        setTreeNodes(nodes);
+      } catch {
+        setTreeNodes([]);
+      }
+    });
+  }, [hasContent, validation.valid, validation.parsed, showTree, showGraph, jsonSizeBytes]);
+
+  useEffect(() => {
+    if ((showTree || showGraph) && jsonSizeBytes > VISUALIZATION_LIMIT_BYTES) {
+      setShowTree(false);
+      setShowGraph(false);
+      if (!visualizationWarningShown.current) {
+        toast.warning(`Tree and graph views are disabled for files larger than ${formatBytes(VISUALIZATION_LIMIT_BYTES)} to keep the app responsive.`);
+        visualizationWarningShown.current = true;
+      }
+    }
+
+    if (jsonSizeBytes <= VISUALIZATION_LIMIT_BYTES) {
+      visualizationWarningShown.current = false;
+    }
+  }, [jsonSizeBytes, showTree, showGraph]);
+
   const canUndo = previousJson !== null;
 
   const handleFormat = useCallback((indent: number) => {
@@ -127,7 +185,7 @@ const Index = () => {
     setIsDragging(false);
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
+  const handleDrop = useCallback(async (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
@@ -136,22 +194,63 @@ const Index = () => {
     if (files.length > 0) {
       const file = files[0];
       if (file.type === 'application/json' || file.name.endsWith('.json')) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          const content = event.target?.result as string;
+        if (file.size > MAX_FILE_SIZE_BYTES) {
+          toast.error(`Files larger than ${formatBytes(MAX_FILE_SIZE_BYTES)} are not supported to avoid freezing.`);
+          return;
+        }
+
+        setIsLoadingFile(true);
+        setLoadProgress(0);
+        
+        try {
+          const content = await readFileInChunks(file, (progress) => {
+            setLoadProgress(progress);
+          });
+          
           setPreviousJson(json);
           setJson(content);
-          toast.success(`Loaded ${file.name}`);
-        };
-        reader.onerror = () => {
+          toast.success(`Loaded ${file.name} (${formatBytes(file.size)})`);
+        } catch (error) {
           toast.error('Failed to read file');
-        };
-        reader.readAsText(file);
+        } finally {
+          setIsLoadingFile(false);
+          setLoadProgress(0);
+        }
       } else {
         toast.error('Please drop a JSON file');
       }
     }
   }, [json]);
+
+  const handleToggleTree = useCallback(() => {
+    if (showTree) {
+      setShowTree(false);
+      return;
+    }
+
+    if (jsonSizeBytes > VISUALIZATION_LIMIT_BYTES) {
+      toast.warning(`Tree view is disabled for files larger than ${formatBytes(VISUALIZATION_LIMIT_BYTES)} to keep the app responsive.`);
+      return;
+    }
+
+    setShowTree(true);
+    setShowGraph(false);
+  }, [showTree, jsonSizeBytes]);
+
+  const handleToggleGraph = useCallback(() => {
+    if (showGraph) {
+      setShowGraph(false);
+      return;
+    }
+
+    if (jsonSizeBytes > VISUALIZATION_LIMIT_BYTES) {
+      toast.warning(`Graph view is disabled for files larger than ${formatBytes(VISUALIZATION_LIMIT_BYTES)} to keep the app responsive.`);
+      return;
+    }
+
+    setShowGraph(true);
+    setShowTree(false);
+  }, [showGraph, jsonSizeBytes]);
 
   return (
     <div 
@@ -161,11 +260,30 @@ const Index = () => {
       onDrop={handleDrop}
     >
       {/* Drag overlay */}
-      {isDragging && (
+      {isDragging && !isLoadingFile && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/90 backdrop-blur-sm">
           <div className="flex flex-col items-center gap-4 rounded-xl border-2 border-dashed border-primary p-12">
             <TreePine className="h-16 w-16 text-primary" />
             <p className="text-xl font-semibold text-foreground">Drop JSON file here</p>
+          </div>
+        </div>
+      )}
+
+      {/* Loading overlay */}
+      {isLoadingFile && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/90 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-4 rounded-xl border border-primary/20 bg-card p-12 shadow-lg">
+            <Loader2 className="h-16 w-16 animate-spin text-primary" />
+            <div className="flex flex-col items-center gap-2">
+              <p className="text-xl font-semibold text-foreground">Loading file...</p>
+              <p className="text-sm text-muted-foreground">{loadProgress.toFixed(0)}% complete</p>
+            </div>
+            <div className="h-2 w-64 overflow-hidden rounded-full bg-muted">
+              <div 
+                className="h-full bg-primary transition-all duration-300" 
+                style={{ width: `${loadProgress}%` }}
+              />
+            </div>
           </div>
         </div>
       )}
@@ -194,8 +312,8 @@ const Index = () => {
           onCopy={handleCopy}
           onClear={handleClear}
           onToggleHistory={() => setShowHistory(!showHistory)}
-          onToggleTree={() => { setShowTree(!showTree); if (!showTree) setShowGraph(false); }}
-          onToggleGraph={() => { setShowGraph(!showGraph); if (!showGraph) setShowTree(false); }}
+          onToggleTree={handleToggleTree}
+          onToggleGraph={handleToggleGraph}
           onToggleSchema={() => setShowSchema(!showSchema)}
           isTreeVisible={showTree}
           isGraphVisible={showGraph}
@@ -239,6 +357,15 @@ const Index = () => {
                 </ResizablePanel>
                 <ResizableHandle withHandle className={splitOrientation === 'horizontal' ? 'mx-2' : 'my-2'} />
                 <ResizablePanel defaultSize={50} minSize={25}>
+                  <div ref={viewContainerRef} className="h-full">
+                  {isPending ? (
+                    <div className="h-full flex items-center justify-center bg-card rounded-lg border border-border">
+                      <div className="flex flex-col items-center gap-4">
+                        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                        <p className="text-lg font-medium text-muted-foreground">Rendering {showTree ? 'tree' : 'graph'} view...</p>
+                      </div>
+                    </div>
+                  ) : (
                   <AnimatePresence mode="wait">
                     {showTree && (
                       <motion.div
@@ -265,6 +392,8 @@ const Index = () => {
                       </motion.div>
                     )}
                   </AnimatePresence>
+                  )}
+                  </div>
                 </ResizablePanel>
               </ResizablePanelGroup>
             ) : (
@@ -309,7 +438,7 @@ const Index = () => {
 
       {/* Floating Action Buttons */}
       <AnimatePresence>
-        {hasContent && validation.valid && (
+        {hasContent && validation.valid && (showTree || showGraph) && (
           <motion.div
             initial={{ opacity: 0, scale: 0.8, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -319,10 +448,11 @@ const Index = () => {
             {/* Fullscreen Toggle */}
             <Button
               size="icon"
-              className="h-12 w-12 rounded-full shadow-lg hover:shadow-xl glass hover-lift ripple"
+              variant="default"
+              className="h-12 w-12 rounded-full shadow-lg hover:shadow-xl glass hover-lift ripple bg-primary text-primary-foreground hover:bg-primary/90"
               onClick={() => {
                 if (!document.fullscreenElement) {
-                  document.documentElement.requestFullscreen();
+                  viewContainerRef.current?.requestFullscreen();
                   setIsFullscreen(true);
                 } else {
                   document.exitFullscreen();

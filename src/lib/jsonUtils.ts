@@ -1,5 +1,6 @@
 export interface ValidationResult {
   valid: boolean;
+  parsed?: unknown;
   error?: {
     message: string;
     line?: number;
@@ -20,8 +21,8 @@ export function validateJson(input: string): ValidationResult {
   }
 
   try {
-    JSON.parse(input);
-    return { valid: true };
+    const parsed = JSON.parse(input);
+    return { valid: true, parsed };
   } catch (e) {
     const error = e as SyntaxError;
     const match = error.message.match(/at position (\d+)/);
@@ -56,7 +57,7 @@ export function minifyJson(input: string): string {
   return JSON.stringify(parsed);
 }
 
-export function getJsonStats(input: string): JsonStats {
+export function getJsonStats(input: string, parsed?: unknown): JsonStats {
   const lines = input.split('\n').length;
   const bytes = new Blob([input]).size;
   const size = bytes < 1024 ? `${bytes} B` : `${(bytes / 1024).toFixed(1)} KB`;
@@ -65,7 +66,7 @@ export function getJsonStats(input: string): JsonStats {
   let depth = 0;
 
   try {
-    const parsed = JSON.parse(input);
+    const target = typeof parsed !== 'undefined' ? parsed : JSON.parse(input);
     const countKeysAndDepth = (obj: unknown, currentDepth: number): number => {
       if (typeof obj !== 'object' || obj === null) return currentDepth;
 
@@ -85,7 +86,7 @@ export function getJsonStats(input: string): JsonStats {
       return maxDepth;
     };
 
-    depth = countKeysAndDepth(parsed, 0);
+    depth = countKeysAndDepth(target, 0);
   } catch {
     // Invalid JSON, return defaults
   }
@@ -164,8 +165,13 @@ export function validateJsonSchema(json: string, schema: string): ValidationResu
   }
 }
 
-export function buildTree(obj: unknown, path: string = 'root'): TreeNode[] {
+export function buildTree(obj: unknown, path: string = 'root', maxDepth: number = 100, currentDepth: number = 0): TreeNode[] {
   if (typeof obj !== 'object' || obj === null) {
+    return [];
+  }
+
+  // Limit depth to prevent stack overflow on very deep objects
+  if (currentDepth > maxDepth) {
     return [];
   }
 
@@ -175,7 +181,7 @@ export function buildTree(obj: unknown, path: string = 'root'): TreeNode[] {
       path: `${path}[${index}]`,
       value: item,
       type: getType(item),
-      children: buildTree(item, `${path}[${index}]`),
+      children: buildTree(item, `${path}[${index}]`, maxDepth, currentDepth + 1),
     }));
   }
 
@@ -184,7 +190,7 @@ export function buildTree(obj: unknown, path: string = 'root'): TreeNode[] {
     path: `${path}.${key}`,
     value,
     type: getType(value),
-    children: buildTree(value, `${path}.${key}`),
+    children: buildTree(value, `${path}.${key}`, maxDepth, currentDepth + 1),
   }));
 }
 
