@@ -2,12 +2,12 @@
 import { validateJson, formatJson, minifyJson, getJsonStats, buildTree } from '@/lib/jsonUtils';
 
 export interface WorkerRequest {
-  type: 'validate' | 'format' | 'minify' | 'stats' | 'buildTree';
+  type: 'validate' | 'format' | 'minify' | 'stats' | 'buildTree' | 'processAll';
   payload: any;
 }
 
 export interface WorkerResponse {
-  type: 'validate' | 'format' | 'minify' | 'stats' | 'buildTree';
+  type: 'validate' | 'format' | 'minify' | 'stats' | 'buildTree' | 'processAll';
   result: any;
   error?: string;
 }
@@ -34,6 +34,34 @@ self.onmessage = (e: MessageEvent<WorkerRequest>) => {
       case 'buildTree':
         result = buildTree(payload);
         break;
+      case 'processAll': {
+        const jsonStr = payload;
+        const validationResult = validateJson(jsonStr);
+        let statsResult: any = { lines: 1, size: '0 B', keys: 0, depth: 0 };
+        let treeNodesResult: any[] = [];
+
+        if (validationResult.valid) {
+          statsResult = getJsonStats(jsonStr, validationResult.parsed);
+          try {
+            treeNodesResult = buildTree(validationResult.parsed);
+          } catch (err) {
+            // Safe fallback
+          }
+        }
+
+        // Clean validationResult to avoid structured cloning of heavy parsed objects
+        const cleanValidation = {
+          valid: validationResult.valid,
+          error: validationResult.error,
+        };
+
+        result = {
+          validation: cleanValidation,
+          stats: statsResult,
+          treeNodes: treeNodesResult,
+        };
+        break;
+      }
       default:
         throw new Error(`Unknown worker request type: ${type}`);
     }
@@ -49,3 +77,4 @@ self.onmessage = (e: MessageEvent<WorkerRequest>) => {
     self.postMessage(response);
   }
 };
+

@@ -70,6 +70,9 @@ export function getJsonStats(input: string, parsed?: unknown): JsonStats {
     const countKeysAndDepth = (obj: unknown, currentDepth: number): number => {
       if (typeof obj !== 'object' || obj === null) return currentDepth;
 
+      // Prevent stack overflow on extremely deep nested JSON
+      if (currentDepth > 500) return currentDepth;
+
       let maxDepth = currentDepth;
 
       if (Array.isArray(obj)) {
@@ -175,23 +178,50 @@ export function buildTree(obj: unknown, path: string = 'root', maxDepth: number 
     return [];
   }
 
+  const MAX_CHILDREN = 150;
+
   if (Array.isArray(obj)) {
-    return obj.map((item, index) => ({
+    const items = obj.slice(0, MAX_CHILDREN).map((item, index) => ({
       key: `[${index}]`,
       path: `${path}[${index}]`,
       value: item,
       type: getType(item),
       children: buildTree(item, `${path}[${index}]`, maxDepth, currentDepth + 1),
     }));
+
+    if (obj.length > MAX_CHILDREN) {
+      items.push({
+        key: '...',
+        path: `${path}[more]`,
+        value: `${obj.length - MAX_CHILDREN} more items hidden for performance`,
+        type: 'null',
+        children: [],
+      });
+    }
+
+    return items;
   }
 
-  return Object.entries(obj).map(([key, value]) => ({
+  const entries = Object.entries(obj);
+  const items = entries.slice(0, MAX_CHILDREN).map(([key, value]) => ({
     key,
     path: `${path}.${key}`,
     value,
     type: getType(value),
     children: buildTree(value, `${path}.${key}`, maxDepth, currentDepth + 1),
   }));
+
+  if (entries.length > MAX_CHILDREN) {
+    items.push({
+      key: '...',
+      path: `${path}.[more]`,
+      value: `${entries.length - MAX_CHILDREN} more keys hidden for performance`,
+      type: 'null',
+      children: [],
+    });
+  }
+
+  return items;
 }
 
 export interface TreeNode {
@@ -226,11 +256,10 @@ export function parsePathToSegments(path: string): string[] {
   return segments;
 }
 
-export function findJsonLineNumberFromPath(jsonText: string, path: string): number {
+export function findJsonLineNumberFromPathLines(lines: string[], path: string): number {
   const segments = parsePathToSegments(path);
   if (segments.length === 0) return 1;
 
-  const lines = jsonText.split('\n');
   let currentLine = 1;
   let segmentIndex = 0;
 
@@ -245,14 +274,27 @@ export function findJsonLineNumberFromPath(jsonText: string, path: string): numb
       continue;
     }
 
-    const keyPattern = new RegExp(`["']${targetSegment}["']\\s*:`);
-    if (keyPattern.test(line)) {
+    // High performance native string search instead of expensive RegExp recreation
+    const keyQuote1 = `"${targetSegment}"`;
+    const keyQuote2 = `'${targetSegment}'`;
+    const idx1 = line.indexOf(keyQuote1);
+    const idx2 = line.indexOf(keyQuote2);
+
+    if (
+      (idx1 !== -1 && line.includes(':', idx1 + keyQuote1.length)) ||
+      (idx2 !== -1 && line.includes(':', idx2 + keyQuote2.length))
+    ) {
       currentLine = i + 1;
       segmentIndex++;
     }
   }
 
   return currentLine;
+}
+
+export function findJsonLineNumberFromPath(jsonText: string, path: string): number {
+  const lines = jsonText.split('\n');
+  return findJsonLineNumberFromPathLines(lines, path);
 }
 
 export function inferJsonSchema(value: unknown): string {
@@ -309,12 +351,13 @@ export function inferJsonSchema(value: unknown): string {
 export function getJsonPathAtLine(jsonText: string, treeNodes: TreeNode[], lineNumber: number): string {
   if (treeNodes.length === 0) return 'root';
 
+  const lines = jsonText.split('\n');
   let bestPath = 'root';
   let bestLine = 1;
 
   const traverse = (nodes: TreeNode[]) => {
     for (const node of nodes) {
-      const nodeLine = findJsonLineNumberFromPath(jsonText, node.path);
+      const nodeLine = findJsonLineNumberFromPathLines(lines, node.path);
       if (nodeLine <= lineNumber && nodeLine >= bestLine) {
         bestLine = nodeLine;
         bestPath = node.path;

@@ -159,6 +159,17 @@ function TreeNodeItem({
     return String(node.value);
   };
 
+  if (node.key === '...') {
+    return (
+      <div className="select-none" style={{ marginLeft: `${depth * 16}px` }}>
+        <div className="flex items-center gap-2 rounded-md px-3 py-1.5 bg-muted/30 border border-border/40 text-muted-foreground/60 text-xs italic font-medium my-0.5 max-w-md">
+          <span className="w-1.5 h-1.5 rounded-full bg-accent/40 animate-pulse shrink-0" />
+          <span>{String(node.value)}</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="select-none" style={{ marginLeft: `${depth * 16}px` }}>
       <div

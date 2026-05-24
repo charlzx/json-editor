@@ -14,14 +14,12 @@ import { Button } from '@/components/ui/button';
 import { useTheme } from '@/hooks/useTheme';
 import { useProjects } from '@/hooks/useProjects';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useJsonWorker } from '@/hooks/useJsonWorker';
 import {
-  validateJson,
-  formatJson,
-  minifyJson,
-  getJsonStats,
-  buildTree,
   TreeNode,
   findJsonLineNumberFromPath,
+  ValidationResult,
+  JsonStats,
 } from '@/lib/jsonUtils';
 import { readFileInChunks, formatFileSize } from '@/lib/fileUtils';
 import { toast } from 'sonner';
@@ -117,7 +115,6 @@ const Editor = () => {
   const viewContainerRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<any>(null);
   const visualizationWarningShown = useRef(false);
-  const [isPending, startTransition] = useTransition();
   const initialLoadDone = useRef(false);
 
   // ── Project state ──────────────────────────────────────────────────────────
@@ -187,24 +184,36 @@ const Editor = () => {
 
   // ── Derived state ──────────────────────────────────────────────────────────
   const activeProject = useMemo(() => projects.find(p => p.id === id) || null, [projects, id]);
-  const validation = useMemo(() => validateJson(debouncedJson), [debouncedJson]);
-  const stats = useMemo(() => getJsonStats(debouncedJson, validation.parsed), [debouncedJson, validation.parsed]);
+  const [validation, setValidation] = useState<ValidationResult>({ valid: true });
+  const [stats, setStats] = useState<JsonStats>({ lines: 1, size: '0 B', keys: 0, depth: 0 });
+  const [treeNodes, setTreeNodes] = useState<TreeNode[]>([]);
   const jsonSizeBytes = useMemo(() => new Blob([debouncedJson]).size, [debouncedJson]);
   const hasContent = debouncedJson.trim().length > 0;
   const canUndo = previousJson !== null;
-  const [treeNodes, setTreeNodes] = useState<TreeNode[]>([]);
+
+  // ── Web Worker Async Process ───────────────────────────────────────────────
+  const { runTask, isProcessing: isWorkerProcessing } = useJsonWorker();
 
   useEffect(() => {
-    if (!hasContent || !validation.valid || typeof validation.parsed === 'undefined') {
-      setTreeNodes([]); return;
+    if (!hasContent) {
+      setValidation({ valid: false, error: { message: 'Empty input' } });
+      setStats({ lines: 1, size: '0 B', keys: 0, depth: 0 });
+      setTreeNodes([]);
+      return;
     }
-    if (!(showTree || showGraph)) { setTreeNodes([]); return; }
-    if (jsonSizeBytes > VISUALIZATION_LIMIT_BYTES) { setTreeNodes([]); return; }
-    startTransition(() => {
-      try { setTreeNodes(buildTree(validation.parsed)); }
-      catch { setTreeNodes([]); }
+
+    runTask({ type: 'processAll', payload: debouncedJson }, (result, error) => {
+      if (error) {
+        setValidation({ valid: false, error: { message: error } });
+        return;
+      }
+      if (result) {
+        setValidation(result.validation);
+        setStats(result.stats);
+        setTreeNodes(result.treeNodes);
+      }
     });
-  }, [hasContent, validation.valid, validation.parsed, showTree, showGraph, jsonSizeBytes]);
+  }, [debouncedJson, hasContent, runTask]);
 
   useEffect(() => {
     if ((showTree || showGraph) && jsonSizeBytes > VISUALIZATION_LIMIT_BYTES) {
@@ -501,12 +510,12 @@ const Editor = () => {
                 <ResizableHandle withHandle className={splitOrientation === 'horizontal' ? 'mx-2' : 'my-2'} />
                 <ResizablePanel defaultSize={50} minSize={25}>
                   <div ref={viewContainerRef} className="h-full">
-                    {isPending ? (
-                      <div className="h-full flex items-center justify-center bg-card rounded-lg border border-border">
-                        <div className="flex flex-col items-center gap-4">
-                          <Loader2 className="h-12 w-12 animate-spin text-accent" />
-                          <p className="text-lg font-medium text-muted-foreground">
-                            Rendering {showTree ? 'tree' : showGraph ? 'graph' : 'schema'} view...
+                    {isWorkerProcessing ? (
+                      <div className="h-full flex items-center justify-center bg-card/65 backdrop-blur-[2px] rounded-lg border border-border">
+                        <div className="flex flex-col items-center gap-4 animate-in fade-in duration-200">
+                          <Loader2 className="h-10 w-10 animate-spin text-accent" />
+                          <p className="text-sm font-medium text-muted-foreground">
+                            Processing JSON off-thread...
                           </p>
                         </div>
                       </div>
