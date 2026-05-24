@@ -344,21 +344,22 @@ export function GraphView({ nodes, onNodeDoubleClick }: GraphViewProps) {
             // Highlight path leading to selected node
             const isActive = getActiveConnections.has(node.path);
             const isPathMatch = searchQuery.trim() ? (isMatch(node) && (node.parent ? isMatch(node.parent) : true)) : true;
+            const activeColor = selectedNode ? getNodeColor(selectedNode.type) : 'hsl(var(--accent))';
 
             return (
               <g key={`path-group-${node.path}`}>
                 <path
                   d={`M ${startX} ${startY} C ${midX} ${startY}, ${midX} ${endY}, ${endX} ${endY}`}
                   fill="none"
-                  stroke={isActive ? 'hsl(var(--accent))' : 'currentColor'}
+                  stroke={isActive ? activeColor : 'currentColor'}
                   strokeWidth={isActive ? '2.5' : '1.5'}
                   className={cn(
                     "text-border/60 transition-all duration-300",
-                    isActive ? "stroke-accent" : "dark:text-border/40",
+                    isActive ? "" : "dark:text-border/40",
                     !isPathMatch && "opacity-15 text-border/20"
                   )}
                   style={{
-                    filter: isActive ? 'drop-shadow(0 0 3px hsl(var(--accent) / 0.4))' : 'none'
+                    filter: isActive ? `drop-shadow(0 0 3px ${activeColor}80)` : 'none'
                   }}
                 />
               </g>
@@ -370,6 +371,7 @@ export function GraphView({ nodes, onNodeDoubleClick }: GraphViewProps) {
             const isSelected = selectedNode?.path === node.path;
             const isActive = getActiveConnections.has(node.path);
             const matchesSearch = searchQuery.trim() ? isMatch(node) : true;
+            const activeColor = selectedNode ? getNodeColor(selectedNode.type) : 'hsl(var(--accent))';
 
             return (
               <g
@@ -399,7 +401,7 @@ export function GraphView({ nodes, onNodeDoubleClick }: GraphViewProps) {
                     height={NODE_HEIGHT + 8}
                     rx="29"
                     fill="none"
-                    stroke={isSelected ? getNodeColor(node.type) : 'hsl(var(--accent))'}
+                    stroke={isSelected ? getNodeColor(node.type) : activeColor}
                     strokeWidth="1.5"
                     className="opacity-45 dark:opacity-30 blur-[2px]"
                   />
@@ -411,11 +413,11 @@ export function GraphView({ nodes, onNodeDoubleClick }: GraphViewProps) {
                   height={NODE_HEIGHT}
                   rx="25"
                   fill="hsl(var(--card))"
-                  stroke={isSelected ? getNodeColor(node.type) : (isActive ? 'hsl(var(--accent))' : 'hsl(var(--border)/70%)')}
+                  stroke={isSelected ? getNodeColor(node.type) : (isActive ? activeColor : 'hsl(var(--border)/70%)')}
                   strokeWidth={isSelected ? 1.5 : 1}
                   className="transition-all duration-200 fill-card backdrop-blur-md fill-card/85 dark:fill-card/65 group-hover:stroke-foreground/30"
                   style={{
-                    filter: isSelected ? `drop-shadow(0 0 5px ${getNodeColor(node.type)}30)` : 'none'
+                    filter: isSelected || isActive ? `drop-shadow(0 0 5px ${isSelected ? getNodeColor(node.type) : activeColor}25)` : 'none'
                   }}
                 />
 
