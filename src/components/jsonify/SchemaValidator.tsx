@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { CheckCircle2, XCircle, Info, X, FileJson } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { validateJsonSchema, ValidationResult } from '@/lib/jsonUtils';
+import { validateJsonSchema, ValidationResult, inferJsonSchema } from '@/lib/jsonUtils';
+import { toast } from 'sonner';
 
 interface SchemaValidatorProps {
   json: string;
@@ -46,14 +47,33 @@ export function SchemaValidator({ json, isJsonValid }: SchemaValidatorProps) {
           </p>
         </div>
 
-        <Button
-          variant="link"
-          size="sm"
-          className="h-auto p-0 text-xs"
-          onClick={() => setSchema(exampleSchema)}
-        >
-          Load example schema
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button
+            variant="link"
+            size="sm"
+            className="h-auto p-0 text-xs"
+            onClick={() => setSchema(exampleSchema)}
+          >
+            Load example schema
+          </Button>
+          <span className="text-muted-foreground/30 text-[10px] select-none">|</span>
+          <Button
+            variant="link"
+            size="sm"
+            className="h-auto p-0 text-xs text-accent hover:text-accent/80 font-medium"
+            onClick={() => {
+              if (json && isJsonValid) {
+                const inferred = inferJsonSchema(json);
+                setSchema(inferred);
+                toast.success('JSON Schema inferred successfully!');
+              } else {
+                toast.error('JSON must be valid to infer schema.');
+              }
+            }}
+          >
+            Auto-infer from JSON
+          </Button>
+        </div>
 
         <Textarea
           value={schema}
