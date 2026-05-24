@@ -1,6 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import { validateJson } from '@/lib/jsonUtils';
 
+export interface ProjectVersion {
+  id: string;
+  timestamp: number;
+  name: string;
+  json: string;
+  size: number;
+}
+
 export interface Project {
   id: string;
   name: string;
@@ -10,6 +18,7 @@ export interface Project {
   updatedAt: number;
   size: number;
   isValid: boolean;
+  versions?: ProjectVersion[];
 }
 
 const STORAGE_KEY = 'jsonify-projects';
@@ -121,5 +130,86 @@ export function useProjects() {
     []
   );
 
-  return { projects, createProject, updateProject, deleteProject, getProject };
+  const createCheckpoint = useCallback((projectId: string, name: string) => {
+    setProjects(prev => {
+      const updated = prev.map(p => {
+        if (p.id !== projectId) return p;
+        const now = Date.now();
+        const newVersion: ProjectVersion = {
+          id: `v-${now}-${Math.random().toString(36).slice(2, 9)}`,
+          timestamp: now,
+          name: name.trim() || `Backup ${new Date(now).toLocaleTimeString()}`,
+          json: p.json,
+          size: p.size,
+        };
+        const currentVersions = p.versions || [];
+        const nextVersions = [newVersion, ...currentVersions].slice(0, 15);
+        return {
+          ...p,
+          versions: nextVersions,
+          updatedAt: now,
+        };
+      });
+      saveToStorage(updated);
+      return updated;
+    });
+  }, []);
+
+  const deleteCheckpoint = useCallback((projectId: string, versionId: string) => {
+    setProjects(prev => {
+      const updated = prev.map(p => {
+        if (p.id !== projectId) return p;
+        const currentVersions = p.versions || [];
+        const nextVersions = currentVersions.filter(v => v.id !== versionId);
+        return {
+          ...p,
+          versions: nextVersions,
+          updatedAt: Date.now(),
+        };
+      });
+      saveToStorage(updated);
+      return updated;
+    });
+  }, []);
+
+  const restoreCheckpoint = useCallback((projectId: string, version: ProjectVersion) => {
+    setProjects(prev => {
+      const updated = prev.map(p => {
+        if (p.id !== projectId) return p;
+        const now = Date.now();
+        const backupVersion: ProjectVersion = {
+          id: `v-${now}-${Math.random().toString(36).slice(2, 9)}`,
+          timestamp: now,
+          name: `Pre-restore Auto-Backup`,
+          json: p.json,
+          size: p.size,
+        };
+        const currentVersions = p.versions || [];
+        const nextVersions = [backupVersion, ...currentVersions].slice(0, 15);
+
+        const { valid } = validateJson(version.json);
+        return {
+          ...p,
+          json: version.json,
+          size: version.size,
+          isValid: valid,
+          versions: nextVersions,
+          updatedAt: now,
+        };
+      });
+      saveToStorage(updated);
+      return updated;
+    });
+  }, []);
+
+  return {
+    projects,
+    createProject,
+    updateProject,
+    deleteProject,
+    getProject,
+    createCheckpoint,
+    deleteCheckpoint,
+    restoreCheckpoint,
+  };
 }
