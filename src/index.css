@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,94 +6,94 @@
 
 @layer base {
   :root {
-    /* Light mode - cardboard/cream tones */
-    --background: 35 25% 92%;
-    --foreground: 30 10% 15%;
+    /* Light mode — clean Vercel white */
+    --background: 0 0% 100%;
+    --foreground: 0 0% 9%;
 
-    --card: 35 30% 96%;
-    --card-foreground: 30 10% 15%;
+    --card: 0 0% 98%;
+    --card-foreground: 0 0% 9%;
 
-    --popover: 35 30% 96%;
-    --popover-foreground: 30 10% 15%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 9%;
 
-    --primary: 35 60% 55%;
-    --primary-foreground: 30 10% 10%;
+    --primary: 0 0% 9%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 30 25% 80%;
-    --secondary-foreground: 30 10% 15%;
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 9%;
 
-    --muted: 35 20% 88%;
-    --muted-foreground: 30 10% 45%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
 
-    --accent: 35 70% 50%;
-    --accent-foreground: 30 10% 10%;
+    --accent: 213 100% 47%;
+    --accent-foreground: 0 0% 100%;
 
     --destructive: 0 75% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 30 15% 80%;
-    --input: 30 15% 80%;
-    --ring: 35 60% 55%;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 213 100% 47%;
 
     --radius: 0.5rem;
 
-    /* Syntax highlighting - light mode */
-    --syntax-string: 145 60% 35%;
-    --syntax-number: 25 90% 45%;
-    --syntax-boolean: 35 70% 45%;
+    /* Syntax highlighting — light */
+    --syntax-string: 145 60% 32%;
+    --syntax-number: 213 100% 47%;
+    --syntax-boolean: 25 90% 45%;
     --syntax-null: 0 65% 50%;
-    --syntax-key: 200 60% 35%;
-    --syntax-bracket: 30 10% 40%;
+    --syntax-key: 0 0% 9%;
+    --syntax-bracket: 0 0% 50%;
 
     /* Editor specific */
-    --editor-bg: 35 25% 94%;
-    --editor-line: 35 20% 90%;
-    --editor-line-number: 30 10% 55%;
-    --editor-gutter: 35 25% 90%;
+    --editor-bg: 0 0% 100%;
+    --editor-line: 0 0% 96%;
+    --editor-line-number: 0 0% 65%;
+    --editor-gutter: 0 0% 98%;
   }
 
   .dark {
-    /* Dark mode - black charcoal premium */
+    /* Dark mode — Vercel near-black */
     --background: 0 0% 6%;
-    --foreground: 35 15% 90%;
+    --foreground: 0 0% 93%;
 
     --card: 0 0% 9%;
-    --card-foreground: 35 15% 90%;
+    --card-foreground: 0 0% 93%;
 
     --popover: 0 0% 11%;
-    --popover-foreground: 35 15% 90%;
+    --popover-foreground: 0 0% 93%;
 
-    --primary: 35 50% 60%;
-    --primary-foreground: 0 0% 5%;
+    --primary: 0 0% 93%;
+    --primary-foreground: 0 0% 6%;
 
-    --secondary: 35 25% 25%;
-    --secondary-foreground: 35 15% 90%;
+    --secondary: 0 0% 14%;
+    --secondary-foreground: 0 0% 93%;
 
     --muted: 0 0% 14%;
-    --muted-foreground: 35 10% 55%;
+    --muted-foreground: 0 0% 53%;
 
-    --accent: 35 60% 55%;
-    --accent-foreground: 0 0% 5%;
+    --accent: 213 100% 47%;
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 70% 45%;
+    --destructive: 0 70% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 18%;
-    --input: 0 0% 18%;
-    --ring: 35 50% 60%;
+    --border: 0 0% 16%;
+    --input: 0 0% 16%;
+    --ring: 213 100% 47%;
 
-    /* Syntax highlighting - dark mode (cardboard accent tones) */
+    /* Syntax highlighting — dark */
     --syntax-string: 145 55% 55%;
-    --syntax-number: 30 80% 65%;
-    --syntax-boolean: 35 60% 65%;
+    --syntax-number: 213 100% 65%;
+    --syntax-boolean: 35 80% 65%;
     --syntax-null: 0 65% 60%;
-    --syntax-key: 35 50% 70%;
-    --syntax-bracket: 35 15% 50%;
+    --syntax-key: 0 0% 93%;
+    --syntax-bracket: 0 0% 50%;
 
     /* Editor specific */
     --editor-bg: 0 0% 5%;
-    --editor-line: 0 0% 12%;
-    --editor-line-number: 35 10% 40%;
+    --editor-line: 0 0% 11%;
+    --editor-line-number: 0 0% 38%;
     --editor-gutter: 0 0% 7%;
   }
 }
@@ -137,6 +137,26 @@
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     border: 1px solid hsl(var(--border) / 0.3);
+  }
+
+  /* Vercel-style glow on hover */
+  .glow-blue {
+    box-shadow: 0 0 0 0 hsl(213 100% 47% / 0);
+    transition: box-shadow 0.2s ease;
+  }
+
+  .glow-blue:hover {
+    box-shadow: 0 0 0 3px hsl(213 100% 47% / 0.15);
+  }
+
+  /* Vercel card hover border */
+  .card-hover {
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .card-hover:hover {
+    border-color: hsl(var(--foreground) / 0.3);
+    box-shadow: 0 4px 24px hsl(0 0% 0% / 0.15);
   }
 
   /* Animation utilities */
@@ -247,95 +267,56 @@
 
 /* Keyframe animations */
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @keyframes slideInRight {
-  from {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
 }
 
 @keyframes slideInLeft {
-  from {
-    transform: translateX(-100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
+  from { transform: translateX(-100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
 }
 
 @keyframes slideUp {
-  from {
-    transform: translateY(20px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
 
 @keyframes scaleIn {
-  from {
-    transform: scale(0.9);
-    opacity: 0;
-  }
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
 }
 
 @keyframes pulseSlow {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.6;
-  }
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
 }
 
 /* Custom Scrollbar Styles */
 ::-webkit-scrollbar {
-  width: 12px;
-  height: 12px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: hsl(var(--muted));
-  border-radius: 6px;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--primary) / 0.4);
-  border-radius: 6px;
-  border: 2px solid hsl(var(--muted));
-  transition: background 0.2s;
+  background: hsl(var(--border));
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--primary) / 0.6);
-}
-
-::-webkit-scrollbar-thumb:active {
-  background: hsl(var(--primary) / 0.8);
+  background: hsl(var(--muted-foreground) / 0.4);
 }
 
 /* Firefox scrollbar */
 * {
   scrollbar-width: thin;
-  scrollbar-color: hsl(var(--primary) / 0.4) hsl(var(--muted));
+  scrollbar-color: hsl(var(--border)) transparent;
 }
