@@ -14,6 +14,7 @@ import {
   CheckCircle2,
   XCircle,
   Upload,
+  Monitor,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/jsonify/ThemeToggle';
@@ -175,7 +176,26 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col">
+    <div className="min-h-screen bg-background text-foreground flex flex-col relative">
+      {/* Desktop Required Mobile Overlay */}
+      <div className="lg:hidden fixed inset-0 z-50 bg-background text-foreground flex flex-col items-center justify-center p-6 text-center select-none animate-in">
+        <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl border border-border bg-card text-accent">
+          <Monitor className="h-8 w-8" />
+        </div>
+        <h2 className="text-xl font-bold tracking-tight mb-2">Desktop Required</h2>
+        <p className="text-sm text-muted-foreground max-w-sm leading-relaxed mb-1">
+          JSON Editor uses a split editor, preview, and document outline that need more horizontal space.
+        </p>
+        <p className="text-xs text-accent mt-4 font-medium uppercase tracking-wider">
+          Open on a tablet landscape, laptop, or desktop.
+        </p>
+      </div>
+
+      {/* Theme Toggle in Top Right */}
+      <div className="absolute top-6 right-6 z-40 hidden lg:block">
+        <ThemeToggle isDark={isDark} onToggle={toggleTheme} />
+      </div>
+
       {/* Hidden File Input for Import */}
       <input
         ref={fileInputRef}
@@ -184,16 +204,6 @@ export default function Home() {
         onChange={handleFileChange}
         className="hidden"
       />
-
-      {/* ── Header / Navbar ── */}
-      <header className="border-b border-border bg-background/80 backdrop-blur-md">
-        <div className="mx-auto flex max-w-3xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-3">
-            <span className="text-base font-bold tracking-tight">JSON Editor</span>
-          </div>
-          <ThemeToggle isDark={isDark} onToggle={toggleTheme} />
-        </div>
-      </header>
 
       {/* ── Main Container ── */}
       <main className="mx-auto w-full max-w-3xl px-6 py-16 flex-1 flex flex-col">

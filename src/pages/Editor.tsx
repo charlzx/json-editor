@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef, useTransition } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { TreePine, Maximize, Minimize, RotateCw, Loader2, ArrowLeft, Pencil, Check, X } from 'lucide-react';
+import { TreePine, Maximize, Minimize, RotateCw, Loader2, ArrowLeft, Pencil, Check, X, Monitor } from 'lucide-react';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { ThemeToggle } from '@/components/jsonify/ThemeToggle';
 import { MonacoJsonEditor } from '@/components/jsonify/MonacoJsonEditor';
@@ -319,11 +319,24 @@ const Editor = () => {
 
   return (
     <div
-      className="flex h-screen flex-col bg-background"
+      className="flex h-screen flex-col bg-background relative"
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
+      {/* Desktop Required Mobile Overlay */}
+      <div className="lg:hidden fixed inset-0 z-50 bg-background text-foreground flex flex-col items-center justify-center p-6 text-center select-none animate-in">
+        <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl border border-border bg-card text-accent">
+          <Monitor className="h-8 w-8" />
+        </div>
+        <h2 className="text-xl font-bold tracking-tight mb-2">Desktop Required</h2>
+        <p className="text-sm text-muted-foreground max-w-sm leading-relaxed mb-1">
+          JSON Editor uses a split editor, preview, and document outline that need more horizontal space.
+        </p>
+        <p className="text-xs text-accent mt-4 font-medium uppercase tracking-wider">
+          Open on a tablet landscape, laptop, or desktop.
+        </p>
+      </div>
       {/* Drag overlay */}
       {isDragging && !isLoadingFile && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/90 backdrop-blur-sm">
