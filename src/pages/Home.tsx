@@ -15,6 +15,7 @@ import {
   XCircle,
   Upload,
   Monitor,
+  Copy,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/jsonify/ThemeToggle';
@@ -40,9 +41,10 @@ interface ProjectRowProps {
   project: Project;
   onOpen: () => void;
   onDelete: () => void;
+  onDuplicate: () => void;
 }
 
-function ProjectRow({ project, onOpen, onDelete }: ProjectRowProps) {
+function ProjectRow({ project, onOpen, onDelete, onDuplicate }: ProjectRowProps) {
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   return (
@@ -88,7 +90,7 @@ function ProjectRow({ project, onOpen, onDelete }: ProjectRowProps) {
           {relativeTime(project.updatedAt)}
         </span>
 
-        <div className="flex items-center gap-2 min-w-[70px] justify-end">
+        <div className="flex items-center gap-2 min-w-[100px] justify-end">
           {confirmDelete ? (
             <div className="flex items-center gap-1.5 bg-background/80 border border-border rounded-md px-2 py-1 z-10">
               <button
@@ -108,9 +110,18 @@ function ProjectRow({ project, onOpen, onDelete }: ProjectRowProps) {
           ) : (
             <>
               <button
+                onClick={onDuplicate}
+                className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                aria-label="Duplicate project"
+                title="Duplicate project"
+              >
+                <Copy className="h-4 w-4" />
+              </button>
+              <button
                 onClick={() => setConfirmDelete(true)}
-                className="opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity p-1.5 rounded-md hover:bg-destructive/10 hover:text-destructive text-muted-foreground"
+                className="p-1.5 rounded-md hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-colors"
                 aria-label="Delete project"
+                title="Delete project"
               >
                 <Trash2 className="h-4 w-4" />
               </button>
@@ -306,6 +317,14 @@ export default function Home() {
                       project={project}
                       onOpen={() => navigate(`/editor/${project.id}`)}
                       onDelete={() => deleteProject(project.id)}
+                      onDuplicate={() => {
+                        createProject({
+                          name: `${project.name} Copy`,
+                          description: project.description,
+                          json: project.json,
+                        });
+                        toast.success('Project duplicated');
+                      }}
                     />
                   ))}
                 </motion.div>
