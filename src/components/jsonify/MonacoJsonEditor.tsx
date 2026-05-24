@@ -9,14 +9,18 @@ interface MonacoJsonEditorProps {
   errorLine?: number;
   onCursorPathChange?: (path: string) => void;
   treeNodes?: TreeNode[];
+  onEditorMount?: (editor: Monaco.editor.IStandaloneCodeEditor) => void;
 }
 
-export function MonacoJsonEditor({ value, onChange, errorLine, onCursorPathChange, treeNodes }: MonacoJsonEditorProps) {
+export function MonacoJsonEditor({ value, onChange, errorLine, onCursorPathChange, treeNodes, onEditorMount }: MonacoJsonEditorProps) {
   const editorRef = useRef<Monaco.editor.IStandaloneCodeEditor | null>(null);
   const [cursorLine, setCursorLine] = useState(1);
 
   const handleEditorDidMount: OnMount = (editor, monaco) => {
     editorRef.current = editor;
+    if (onEditorMount) {
+      onEditorMount(editor);
+    }
 
     editor.onDidChangeCursorPosition((e) => {
       setCursorLine(e.position.lineNumber);

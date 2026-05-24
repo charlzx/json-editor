@@ -1,12 +1,14 @@
 import { useState, useCallback, useMemo, useRef } from 'react';
 import { TreeNode } from '@/lib/jsonUtils';
 import { cn } from '@/lib/utils';
-import { X, ChevronRight, ChevronDown, ZoomIn, ZoomOut, Maximize2, FileCode, CheckCircle, ExternalLink } from 'lucide-react';
+import { X, ChevronRight, ChevronDown, ZoomIn, ZoomOut, Maximize2, FileCode, CheckCircle, ExternalLink, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
 
 interface GraphViewProps {
   nodes: TreeNode[];
+  onNodeDoubleClick?: (path: string) => void;
 }
 
 interface NodePosition {
@@ -24,14 +26,26 @@ const NODE_HEIGHT = 48;
 const HORIZONTAL_SPACING = 240;
 const VERTICAL_SPACING = 68;
 
-export function GraphView({ nodes }: GraphViewProps) {
+export function GraphView({ nodes, onNodeDoubleClick }: GraphViewProps) {
   const [expandedPaths, setExpandedPaths] = useState<Set<string>>(new Set(['root']));
   const [selectedNode, setSelectedNode] = useState<TreeNode | null>(null);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 60, y: 80 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [searchQuery, setSearchQuery] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const isMatch = useMemo(() => {
+    if (!searchQuery.trim()) return () => true;
+    const q = searchQuery.toLowerCase().trim();
+    return (node: TreeNode) => {
+      const keyMatch = node.key.toLowerCase().includes(q);
+      const valMatch = typeof node.value === 'string' && String(node.value).toLowerCase().includes(q);
+      const pathMatch = node.path.toLowerCase().includes(q);
+      return keyMatch || valMatch || pathMatch;
+    };
+  }, [searchQuery]);
 
   const toggleExpand = useCallback((path: string) => {
     setExpandedPaths(prev => {
@@ -329,6 +343,7 @@ export function GraphView({ nodes }: GraphViewProps) {
 
             // Highlight path leading to selected node
             const isActive = getActiveConnections.has(node.path);
+            const isPathMatch = searchQuery.trim() ? (isMatch(node) && (node.parent ? isMatch(node.parent) : true)) : true;
 
             return (
               <g key={`path-group-${node.path}`}>
@@ -339,7 +354,8 @@ export function GraphView({ nodes }: GraphViewProps) {
                   strokeWidth={isActive ? '2.5' : '1.5'}
                   className={cn(
                     "text-border/60 transition-all duration-300",
-                    isActive ? "stroke-accent" : "dark:text-border/40"
+                    isActive ? "stroke-accent" : "dark:text-border/40",
+                    !isPathMatch && "opacity-15 text-border/20"
                   )}
                   style={{
                     filter: isActive ? 'drop-shadow(0 0 3px hsl(var(--accent) / 0.4))' : 'none'
@@ -349,20 +365,29 @@ export function GraphView({ nodes }: GraphViewProps) {
             );
           })}
 
-          {/* ── SVG Nodes ── */}
           {positions.map(({ node, x, y, isExpanded }) => {
             const hasChildren = node.children && node.children.length > 0;
             const isSelected = selectedNode?.path === node.path;
             const isActive = getActiveConnections.has(node.path);
+            const matchesSearch = searchQuery.trim() ? isMatch(node) : true;
 
             return (
               <g
                 key={`node-group-${node.path}`}
                 transform={`translate(${x}, ${y})`}
-                className="interactive-node cursor-pointer group"
+                className={cn(
+                  "interactive-node cursor-pointer group transition-all duration-300",
+                  !matchesSearch && "opacity-25 hover:opacity-100"
+                )}
                 onClick={(e) => {
                   e.stopPropagation();
                   setSelectedNode(node);
+                }}
+                onDoubleClick={(e) => {
+                  e.stopPropagation();
+                  if (onNodeDoubleClick) {
+                    onNodeDoubleClick(node.path);
+                  }
                 }}
               >
                 {/* Node box shadow glow (only on active/selected) */}
@@ -501,6 +526,26 @@ export function GraphView({ nodes }: GraphViewProps) {
           })}
         </svg>
       </div>
+      {/* ── Graph Search Filter (Floating Glass Panel) ── */}
+      <div className="canvas-controls absolute bottom-4 left-4 z-20 flex items-center gap-2 bg-card/90 backdrop-blur-xl border border-border/60 pl-3 pr-2 py-2 rounded-xl shadow-lg w-64 max-w-xs transition-all duration-200 focus-within:border-accent/80">
+        <Search className="h-4 w-4 text-muted-foreground shrink-0" />
+        <input
+          type="text"
+          placeholder="Search and highlight nodes..."
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
+          className="w-full bg-transparent text-xs text-foreground placeholder:text-muted-foreground focus:outline-none"
+        />
+        {searchQuery && (
+          <button
+            onClick={() => setSearchQuery('')}
+            className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+          >
+            <X className="h-3 w-3" />
+          </button>
+        )}
+      </div>
+
     </div>
   );
 }

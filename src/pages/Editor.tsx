@@ -21,6 +21,7 @@ import {
   getJsonStats,
   buildTree,
   TreeNode,
+  findJsonLineNumberFromPath,
 } from '@/lib/jsonUtils';
 import { readFileInChunks, formatFileSize } from '@/lib/fileUtils';
 import { toast } from 'sonner';
@@ -114,6 +115,7 @@ const Editor = () => {
     restoreCheckpoint,
   } = useProjects();
   const viewContainerRef = useRef<HTMLDivElement>(null);
+  const editorRef = useRef<any>(null);
   const visualizationWarningShown = useRef(false);
   const [isPending, startTransition] = useTransition();
   const initialLoadDone = useRef(false);
@@ -312,6 +314,16 @@ const Editor = () => {
     toast.success('Version checkpoint restored!');
   }, [id, restoreCheckpoint]);
 
+  const handleGraphNodeDoubleClick = useCallback((path: string) => {
+    const line = findJsonLineNumberFromPath(json, path);
+    if (editorRef.current) {
+      editorRef.current.revealLineInCenter(line);
+      editorRef.current.setPosition({ lineNumber: line, column: 1 });
+      editorRef.current.focus();
+      toast.success(`Focused node inside editor at line ${line}`);
+    }
+  }, [json]);
+
   const lastAutoCheckpointRef = useRef<string>('');
 
   useEffect(() => {
@@ -483,6 +495,7 @@ const Editor = () => {
                     errorLine={validation.error?.line}
                     onCursorPathChange={setActiveCursorPath}
                     treeNodes={treeNodes}
+                    onEditorMount={editor => { editorRef.current = editor; }}
                   />
                 </ResizablePanel>
                 <ResizableHandle withHandle className={splitOrientation === 'horizontal' ? 'mx-2' : 'my-2'} />
@@ -504,9 +517,9 @@ const Editor = () => {
                             <TreeView nodes={treeNodes} />
                           </motion.div>
                         )}
-                        {showGraph && (
+                         {showGraph && (
                           <motion.div key="graph" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }} className="h-full">
-                            <GraphView nodes={treeNodes} />
+                            <GraphView nodes={treeNodes} onNodeDoubleClick={handleGraphNodeDoubleClick} />
                           </motion.div>
                         )}
                         {showSchema && (
@@ -537,6 +550,7 @@ const Editor = () => {
                   errorLine={validation.error?.line}
                   onCursorPathChange={setActiveCursorPath}
                   treeNodes={treeNodes}
+                  onEditorMount={editor => { editorRef.current = editor; }}
                 />
               </div>
             )}
