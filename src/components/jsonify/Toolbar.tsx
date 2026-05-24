@@ -4,7 +4,6 @@ import {
   Copy, 
   Check, 
   Trash2, 
-  History,
   FileJson,
   TreePine,
   ChevronDown,
@@ -31,7 +30,6 @@ interface ToolbarProps {
   onUndo: () => void;
   onCopy: () => void;
   onClear: () => void;
-  onToggleHistory: () => void;
   onToggleTree: () => void;
   onToggleGraph: () => void;
   onToggleSchema: () => void;
@@ -49,7 +47,6 @@ export function Toolbar({
   onUndo,
   onCopy,
   onClear,
-  onToggleHistory,
   onToggleTree,
   onToggleGraph,
   onToggleSchema,
@@ -176,8 +173,6 @@ export function Toolbar({
       </Tooltip>
 
       <div className="h-6 w-px bg-border/50" />
-        <Trash2 className="h-4 w-4" />
-      <div className="h-6 w-px bg-border/50" />
 
       <Tooltip>
         <TooltipTrigger asChild>
@@ -232,24 +227,6 @@ export function Toolbar({
         </TooltipContent>
       </Tooltip>
 
-      <div className="flex-1" />
-
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={onToggleHistory}
-            className="gap-1.5 ripple hover-lift"
-          >
-            <History className="h-4 w-4" />
-            History
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>
-          <p>Toggle history</p>
-        </TooltipContent>
-      </Tooltip>
     </div>
   );
 }
