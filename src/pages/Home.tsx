@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -140,6 +140,20 @@ export default function Home() {
   const { projects, createProject, deleteProject } = useProjects();
   const [search, setSearch] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // ── SEO & Page Metadata Management ────────────────────────────────────────
+  useEffect(() => {
+    document.title = 'JSON Editor - Local JSON Formatting & Structure Visualization';
+    
+    let metaDescription = document.querySelector('meta[name="description"]');
+    if (!metaDescription) {
+      metaDescription = document.createElement('meta');
+      metaDescription.setAttribute('name', 'description');
+      document.head.appendChild(metaDescription);
+    }
+    metaDescription.setAttribute('content', 'A professional local-first JSON editor, formatter, and visual tree/graph explorer. Features live schema validation, Monaco editor, and resizable layout panels.');
+  }, []);
+
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();

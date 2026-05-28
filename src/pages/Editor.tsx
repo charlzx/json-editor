@@ -124,6 +124,20 @@ const Editor = () => {
   const [previousJson, setPreviousJson] = useState<string | null>(null);
   const [activeCursorPath, setActiveCursorPath] = useState('root');
 
+  // ── SEO & Page Metadata Management ────────────────────────────────────────
+  useEffect(() => {
+    const activeName = projectName ? projectName : 'Document';
+    document.title = `JSON Editor - ${activeName}`;
+
+    let metaDescription = document.querySelector('meta[name="description"]');
+    if (!metaDescription) {
+      metaDescription = document.createElement('meta');
+      metaDescription.setAttribute('name', 'description');
+      document.head.appendChild(metaDescription);
+    }
+    metaDescription.setAttribute('content', `Edit, format, validate, and visualize your JSON project "${activeName}" securely inside your browser's sandboxed local environment.`);
+  }, [projectName]);
+
   // ── UI state ───────────────────────────────────────────────────────────────
   const [showTree, setShowTree] = useState(false);
   const [showGraph, setShowGraph] = useState(false);

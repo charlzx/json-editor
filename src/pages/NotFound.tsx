@@ -9,6 +9,15 @@ const NotFound = () => {
 
   useEffect(() => {
     console.error("404 Error: User attempted to access non-existent route:", location.pathname);
+    document.title = "JSON Editor - Page Not Found";
+    
+    let metaDescription = document.querySelector('meta[name="description"]');
+    if (!metaDescription) {
+      metaDescription = document.createElement('meta');
+      metaDescription.setAttribute('name', 'description');
+      document.head.appendChild(metaDescription);
+    }
+    metaDescription.setAttribute('content', "Page not found in JSON Editor application.");
   }, [location.pathname]);
 
   return (
